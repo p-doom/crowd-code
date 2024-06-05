@@ -9,13 +9,19 @@
   "categories": [
     "Other"
   ],
-  "activationEvents": [],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
   "main": "./dist/extension.js",
   "contributes": {
     "commands": [
       {
-        "command": "vs-code-recorder.helloWorld",
-        "title": "Hello World"
+        "command": "vs-code-recorder.startRecording",
+        "title": "VS Code Recorder: Start Recording"
+      },
+      {
+        "command": "vs-code-recorder.stopRecording",
+        "title": "VS Code Recorder: Stop Recording"
       }
     ]
   },
