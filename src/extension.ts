@@ -8,6 +8,11 @@ import * as path from 'path'
 import * as vscode from 'vscode'
 import * as readline from 'readline'
 
+interface File {
+	name: string
+	content: string
+}
+
 let recording = false
 let myStatusBarItem: vscode.StatusBarItem
 const startRecordingCommand = 'vs-code-recorder.startRecording'
@@ -16,7 +21,7 @@ let timer = 0
 let intervalId: NodeJS.Timeout
 let startDateTime: Date
 let endDateTime: Date | null
-const csvQue: string[] = []
+const fileQueue: File[] = []
 let sequence = 0
 let fileName: string
 
@@ -30,6 +35,15 @@ function generateFileName() {
 	return `vs-code-recorder-${date.getFullYear()}_${date.getMonth()}_${date.getDate()}-${date.getHours()}.${date.getMinutes()}.${date.getSeconds()}.${date.getMilliseconds()}`
 }
 
+/**
+ * Builds a CSV row with the given parameters.
+ * @param sequence - The sequence number of the change.
+ * @param rangeOffset - The offset of the changed range.
+ * @param rangeLength - The length of the changed range.
+ * @param text - The text of the change.
+ * @param type - The type of the change (optional, defaults to 'content').
+ * @returns A CSV row string with the provided information.
+ */
 function buildCsvRow(
 	sequence: number,
 	rangeOffset: number,
@@ -61,8 +75,8 @@ const onChangeSubscription = vscode.workspace.onDidChangeTextDocument(event => {
 			event.contentChanges.forEach(change => {
 				sequence++
 
-				csvQue.push(buildCsvRow(sequence, change.rangeOffset, change.rangeLength, change.text))
-				appendToCsvFile()
+				addToFileQueue(buildCsvRow(sequence, change.rangeOffset, change.rangeLength, change.text))
+				appendToFile()
 			})
 		}
 	}
@@ -91,10 +105,10 @@ async function startRecording(context: vscode.ExtensionContext) {
 	)
 	const heading = 'Sequence,Time,File,RangeOffset,RangeLength,Text,Type\n'
 	sequence++
-	fileName = generateFileName() + '.csv'
-	csvQue.push(heading)
-	csvQue.push(buildCsvRow(sequence, 0, 0, editorText || ''))
-	appendToCsvFile()
+	fileName = generateFileName()
+	addToFileQueue(heading)
+	addToFileQueue(buildCsvRow(sequence, 0, 0, editorText || '', ChangeType.TAB))
+	appendToFile()
 	context.subscriptions.push(onChangeSubscription)
 	updateStatusBarItem()
 }
@@ -114,7 +128,7 @@ function stopRecording(context: vscode.ExtensionContext) {
 	}
 	notificationWithProgress('Recording finished')
 	endDateTime = new Date()
-	readCsvFile()
+	processCsvFile()
 	updateStatusBarItem()
 }
 
@@ -192,23 +206,27 @@ function formatSrtTime(milliseconds: number): string {
 
 const appendFile = util.promisify(fs.appendFile)
 
-async function appendToCsvFile() {
+async function appendToFile() {
 	const workspaceFolders = vscode.workspace.workspaceFolders
 
-	while (csvQue.length) {
-		if (workspaceFolders) {
-			const workspacePath = workspaceFolders[0].uri.fsPath
-			const filePath = path.join(workspacePath, fileName)
-			try {
-				await appendFile(filePath, csvQue[0])
-				csvQue.shift()
-				console.log('Successfully appended to file')
-			} catch (err) {
-				console.error('Failed to append to file:', err)
-			}
-		} else {
-			console.error('No workspace folder found')
+	if (workspaceFolders) {
+		const workspacePath = workspaceFolders[0].uri.fsPath
+		while (fileQueue.length) {
+			const filePath = path.join(workspacePath, fileQueue[0].name)
+			await addToFile(filePath, fileQueue[0].content)
 		}
+	} else {
+		console.error('No workspace folder found')
+	}
+}
+
+async function addToFile(filePath: string, text: string) {
+	try {
+		await appendFile(filePath, text)
+		fileQueue.shift()
+		console.log('Successfully appended to file')
+	} catch (err) {
+		console.error('Failed to append to file:', err)
 	}
 }
 
@@ -228,37 +246,83 @@ function escapeString(editorText: string | undefined) {
 
 const csvFile: string[] = []
 
-async function readCsvFile() {
+interface Change {
+	sequence: number
+	startTime: number
+	endTime: number
+	text: string
+}
+
+async function processCsvFile() {
 	const workspaceFolders = vscode.workspace.workspaceFolders
 	if (!workspaceFolders) {
 		console.error('No workspace folder found')
 		return
 	}
 	const workspacePath = workspaceFolders[0].uri.fsPath
-	const filePath = path.join(workspacePath, fileName)
+	const filePath = path.join(workspacePath, fileName + '.csv')
 	const fileStream = fs.createReadStream(filePath)
 	const rl = readline.createInterface({
 		input: fileStream,
 		crlfDelay: Infinity,
 	})
 	let i = 0
-	let prevLineArr = []
+	const processedChanges: Change[] = []
 	for await (const line of rl) {
-		if (i === 0) {
-			i++
-			continue
+		if (line === '') {
 		}
 		// Process each line of the CSV file here
 		const lineArr = line.split(/,(?=(?:[^"]*"[^"]*")*[^"]*$)/)
+
 		const sequence = parseInt(lineArr[0])
+		if (isNaN(sequence)) {
+			continue
+		}
 		const time = parseInt(lineArr[1])
 		const file = removeDoubleQuotes(lineArr[2])
 		const rangeOffset = parseInt(lineArr[3])
 		const rangeLength = parseInt(lineArr[4])
 		const text = unescapeString(removeDoubleQuotes(lineArr[5]))
+		const type = lineArr[6]
 		console.log({ sequence, time, file, rangeOffset, rangeLength, text })
-	}
 
+		let newText = ''
+		if (type === ChangeType.TAB) {
+			newText = text
+		} else {
+			const newTextSplit = processedChanges[i - 1].text.split('')
+			newTextSplit.splice(rangeOffset, rangeLength, text)
+			newText = newTextSplit.join('')
+		}
+		processedChanges.push({ sequence, startTime: time, endTime: 0, text: newText })
+		if (i > 0) {
+			processedChanges[i - 1].endTime = time
+			addToFileQueue(
+				addSrtLine(
+					processedChanges[i - 1].sequence,
+					processedChanges[i - 1].startTime,
+					processedChanges[i - 1].endTime,
+					processedChanges[i - 1].text
+				),
+				'srt'
+			)
+		}
+		i++
+	}
+	processedChanges[i - 1].endTime = endDateTime!.getTime() - startDateTime.getTime()
+	addToFileQueue(
+		addSrtLine(
+			processedChanges[i - 1].sequence,
+			processedChanges[i - 1].startTime,
+			processedChanges[i - 1].endTime,
+			processedChanges[i - 1].text
+		),
+		'srt'
+	)
+
+	console.log('Processed changes:', processedChanges)
+	addToFileQueue(JSON.stringify(processedChanges), 'json')
+	appendToFile()
 	rl.close()
 }
 
@@ -278,6 +342,13 @@ function unescapeString(text: string) {
 
 function addSrtLine(sequence: number, start: number, end: number, text: string) {
 	return `${sequence}\n${formatSrtTime(start)} --> ${formatSrtTime(end)}\n${text}\n\n`
+}
+
+function addToFileQueue(content: string, fileExtension: string = 'csv') {
+	fileQueue.push({
+		name: fileName + '.' + fileExtension,
+		content: content,
+	})
 }
 
 // This method is called when your extension is activated
@@ -309,8 +380,8 @@ export function activate(context: vscode.ExtensionContext) {
 			const fileName = editor.document.fileName
 			const editorText = vscode.window.activeTextEditor?.document.getText()
 			sequence++
-			csvQue.push(buildCsvRow(sequence, 0, 0, editorText || '', ChangeType.TAB))
-			appendToCsvFile()
+			addToFileQueue(buildCsvRow(sequence, 0, 0, editorText || '', ChangeType.TAB))
+			appendToFile()
 		}
 	})
 
