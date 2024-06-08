@@ -277,8 +277,6 @@ function escapeString(editorText: string | undefined): string {
 		.replace(/\t/g, '\\t')
 }
 
-const csvFile: string[] = []
-
 interface Change {
 	sequence: number
 	file: string

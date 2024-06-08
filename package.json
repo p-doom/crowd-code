@@ -25,6 +25,10 @@
       }
     ]
   },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/mattia-consiglio/VS-Code-Recorder.git"
+  },
   "scripts": {
     "vscode:prepublish": "npm run package",
     "compile": "webpack",
