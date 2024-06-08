@@ -3,6 +3,7 @@
   "displayName": "VS Code Recorder",
   "description": "Record the code in SRT and JSON format",
   "version": "0.0.1",
+  "publisher": "MattiaConsiglio",
   "engines": {
     "vscode": "^1.89.0"
   },
