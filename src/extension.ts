@@ -94,6 +94,7 @@ async function startRecording(context: vscode.ExtensionContext): Promise<void> {
 	timer = 0
 	startDateTime = new Date()
 	endDateTime = null
+	sequence = 0
 	intervalId = setInterval(() => {
 		timer++
 		updateStatusBarItem()
