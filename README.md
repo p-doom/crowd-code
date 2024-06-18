@@ -8,11 +8,13 @@ The VS Code Recorder Extension is designed to track and record changes made in t
 
 ## Usage
 
-To use the extension, simply start it up and begin working in your text editor. The extension will automatically start recording changes. When you're done, stop the recording and the extension will finalize the data and save it to a CSV file.
+To use the extension, click on "Start recording" in the status bar (on the right) and begin working in your text editor. The extension will automatically start recording changes. When you're done, stop the recording and the extension will finalize the data and save it to a CSV, JSON and SRT file.
 
 ## Output
 
-The recorded changes are saved in a CSV file in your workspace. You can then process this file to generate output files in SRT and JSON formats, providing a detailed and accessible log of your coding session.
+The recorded changes are saved in a CSV file in your workspace.
+
+Then, this file is processed to generate output files in SRT and JSON formats, providing a detailed and accessible log of your coding session.
 
 ## Requirements
 
@@ -27,6 +29,11 @@ This extension does not contribute any additional settings to VS Code.
 There are currently no known issues with this extension.
 
 ## Release Notes
+
+### 1.0.1
+
+- Fix sequence number to start at 0 every recording
+- Update README.md
 
 ### 1.0.0
 
