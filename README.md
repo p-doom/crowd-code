@@ -38,35 +38,7 @@ If you like this extension, please consider [supporting me](https://www.paypal.c
 
 ## Release Notes
 
-### 1.0.5
-
-- Actually add code language recording to SRT export
-
-### 1.0.4
-
-- Add export settings. Now you can choose in which format you want to export the data (SRT or JSON or both).
-- Add minimal mode. This will display only the icons.
-- Add setting for displaying the timer while recording.
-- Update README.md
-
-### 1.0.3
-
-- Add code language recording
-- Code cleanup
-- Update README.md
-
-### 1.0.2
-
-- Update README.md
-
-### 1.0.1
-
-- Fix sequence number to start at 0 every recording
-- Update README.md
-
-### 1.0.0
-
-Initial release of VS Code Recorder Extension.
+See [CHANGELOG.md](CHANGELOG.md)
 
 ---
 

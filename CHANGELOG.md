@@ -11,11 +11,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Link to VS Code Recorder Player.
 
-## 1.0.5
+## 1.0.6
+
+### Changed
+
+- Referenced changelog for release notes
 
 ### Fixed
 
 - Actually add code language recording to SRT export
+
+## 1.0.5
+
+### Changed
+
+- Updated CHANGELOG.md
 
 ## 1.0.4
 
