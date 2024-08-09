@@ -11,7 +11,7 @@ interface File {
 }
 
 let recording = false
-let myStatusBarItem: vscode.StatusBarItem
+let statusBarItem: vscode.StatusBarItem
 const startRecordingCommand = 'vs-code-recorder.startRecording'
 const stopRecordingCommand = 'vs-code-recorder.stopRecording'
 let timer = 0
@@ -21,6 +21,7 @@ let endDateTime: Date | null
 const fileQueue: File[] = []
 let sequence = 0
 let fileName: string
+let config = vscode.workspace.getConfiguration('vsCodeRecorder')
 
 enum ChangeType {
 	CONTENT = 'content',
@@ -173,15 +174,32 @@ function stopRecording(context: vscode.ExtensionContext): void {
 
 /**
  * Updates the status bar item with the current recording status and time.
- */
-function updateStatusBarItem(): void {
-	if (recording) {
-		myStatusBarItem.text = `$(debug-stop) ${formatDisplayTime(timer)}`
-		myStatusBarItem.command = stopRecordingCommand
-	} else {
-		myStatusBarItem.text = `$(circle-large-filled) Start Recording`
-		myStatusBarItem.command = startRecordingCommand
+ */ function updateStatusBarItem(): void {
+	const editor = vscode.window.activeTextEditor
+	if (!editor) {
+		statusBarItem.hide()
+		return
 	}
+	if (recording) {
+		if (config.get('showTimer') === false) {
+			statusBarItem.text = `$(debug-stop)`
+			statusBarItem.tooltip = `Stop Recording\nCurrent time: ${formatDisplayTime(timer)}`
+		}
+		if (config.get('showTimer') === true) {
+			statusBarItem.text = `$(debug-stop) ${formatDisplayTime(timer)}`
+			statusBarItem.tooltip = `Stop Recording`
+		}
+		statusBarItem.command = stopRecordingCommand
+	} else {
+		if (config.get('minimalMode') === true) {
+			statusBarItem.text = `$(circle-large-filled)`
+		} else {
+			statusBarItem.text = `$(circle-large-filled) Start Recording`
+		}
+		statusBarItem.tooltip = 'Start Recording'
+		statusBarItem.command = startRecordingCommand
+	}
+	statusBarItem.show()
 }
 
 /**
@@ -330,6 +348,13 @@ async function processCsvFile(): Promise<void> {
 		console.error('No workspace folder found')
 		return
 	}
+
+	const exportFormats = config.get('exportFormats', ['JSON', 'SRT'])
+
+	if (exportFormats.length === 0) {
+		return
+	}
+
 	const workspacePath = workspaceFolders[0].uri.fsPath
 	const filePath = path.join(workspacePath, '/vs-code-recorder/', fileName + '.csv')
 	const fileStream = fs.createReadStream(filePath)
@@ -363,32 +388,41 @@ async function processCsvFile(): Promise<void> {
 			newText = newTextSplit.join('')
 		}
 		processedChanges.push({ sequence, file, startTime: time, endTime: 0, language, text: newText })
-		if (i > 0) {
-			processedChanges[i - 1].endTime = time
-			addToFileQueue(
-				addSrtLine(
-					processedChanges[i - 1].sequence,
-					processedChanges[i - 1].startTime,
-					processedChanges[i - 1].endTime,
-					JSON.stringify({ text: processedChanges[i - 1].text, file: processedChanges[i - 1].file })
-				),
-				'srt'
-			)
+		if (exportFormats.includes('SRT')) {
+			if (i > 0) {
+				processedChanges[i - 1].endTime = time
+				addToFileQueue(
+					addSrtLine(
+						processedChanges[i - 1].sequence,
+						processedChanges[i - 1].startTime,
+						processedChanges[i - 1].endTime,
+						JSON.stringify({
+							text: processedChanges[i - 1].text,
+							file: processedChanges[i - 1].file,
+						})
+					),
+					'srt'
+				)
+			}
 		}
 		i++
 	}
 	processedChanges[i - 1].endTime = endDateTime!.getTime() - startDateTime.getTime()
-	addToFileQueue(
-		addSrtLine(
-			processedChanges[i - 1].sequence,
-			processedChanges[i - 1].startTime,
-			processedChanges[i - 1].endTime,
-			JSON.stringify({ text: processedChanges[i - 1].text, file: processedChanges[i - 1].file })
-		),
-		'srt'
-	)
+	if (exportFormats.includes('SRT')) {
+		addToFileQueue(
+			addSrtLine(
+				processedChanges[i - 1].sequence,
+				processedChanges[i - 1].startTime,
+				processedChanges[i - 1].endTime,
+				JSON.stringify({ text: processedChanges[i - 1].text, file: processedChanges[i - 1].file })
+			),
+			'srt'
+		)
+	}
 
-	addToFileQueue(JSON.stringify(processedChanges), 'json')
+	if (exportFormats.includes('JSON')) {
+		addToFileQueue(JSON.stringify(processedChanges), 'json')
+	}
 	appendToFile()
 	rl.close()
 }
@@ -440,6 +474,13 @@ function addToFileQueue(content: string, fileExtension: string = 'csv'): void {
 	})
 }
 
+function onConfigurationChange(event: vscode.ConfigurationChangeEvent) {
+	if (event.affectsConfiguration('vsCodeRecorder')) {
+		config = vscode.workspace.getConfiguration('vsCodeRecorder')
+		updateStatusBarItem()
+	}
+}
+
 /**
  * Activates the VS Code extension and sets up commands and event listeners.
  * @param context - The extension context.
@@ -459,7 +500,10 @@ export function activate(context: vscode.ExtensionContext): void {
 		})
 	)
 
+	context.subscriptions.push(vscode.workspace.onDidChangeConfiguration(onConfigurationChange))
+
 	vscode.window.onDidChangeActiveTextEditor(editor => {
+		updateStatusBarItem()
 		if (editor && recording) {
 			const editorText = vscode.window.activeTextEditor?.document.getText()
 			sequence++
@@ -476,10 +520,9 @@ export function activate(context: vscode.ExtensionContext): void {
 		}
 	})
 
-	myStatusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100)
-	myStatusBarItem.show()
+	statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 9000)
 	updateStatusBarItem()
-	context.subscriptions.push(myStatusBarItem)
+	context.subscriptions.push(statusBarItem)
 }
 
 /**

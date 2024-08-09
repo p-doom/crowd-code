@@ -2,7 +2,7 @@
   "name": "vs-code-recorder",
   "displayName": "VS Code Recorder",
   "description": "Record the code in SRT and JSON format",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "publisher": "MattiaConsiglio",
   "icon": "icon.png",
   "engines": {
@@ -25,7 +25,38 @@
         "command": "vs-code-recorder.stopRecording",
         "title": "VS Code Recorder: Stop Recording"
       }
-    ]
+    ],
+    "configuration": {
+      "title": "VS Code Recorder",
+      "properties": {
+        "vsCodeRecorder.exportFormats": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "JSON",
+              "SRT"
+            ]
+          },
+          "uniqueItems": true,
+          "default": [
+            "JSON",
+            "SRT"
+          ],
+          "description": "Select the formats to export recording data"
+        },
+        "vsCodeRecorder.minimalMode": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable minimal mode. Display only icons and no text"
+        },
+        "vsCodeRecorder.showTimer": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show timer. The timer will be displayed even in minimal mode"
+        }
+      }
+    }
   },
   "repository": {
     "type": "git",
