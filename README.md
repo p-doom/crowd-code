@@ -38,6 +38,10 @@ If you like this extension, please consider [supporting me](https://www.paypal.c
 
 ## Release Notes
 
+### 1.0.5
+
+- Actually add code language recording to SRT export
+
 ### 1.0.4
 
 - Add export settings. Now you can choose in which format you want to export the data (SRT or JSON or both).

@@ -339,6 +339,39 @@ interface Change {
 	text: string
 }
 
+function addToSRTFile(
+	processedChanges: Change[],
+	i: number,
+	insideLoop: boolean,
+	exportInSrt: boolean
+) {
+	if (!exportInSrt) {
+		return
+	}
+	if (i === 0) {
+		return
+	}
+	let endTime: number
+	if (insideLoop) {
+		endTime = processedChanges[i - 1].endTime
+	} else {
+		endTime = endDateTime!.getTime() - startDateTime.getTime()
+	}
+	addToFileQueue(
+		addSrtLine(
+			processedChanges[i - 1].sequence,
+			processedChanges[i - 1].startTime,
+			endTime,
+			JSON.stringify({
+				text: processedChanges[i - 1].text,
+				file: processedChanges[i - 1].file,
+				language: processedChanges[i - 1].language,
+			})
+		),
+		'srt'
+	)
+}
+
 /**
  * Processes the CSV file and generates the necessary output files.
  */
@@ -350,6 +383,7 @@ async function processCsvFile(): Promise<void> {
 	}
 
 	const exportFormats = config.get('exportFormats', ['JSON', 'SRT'])
+	const exportInSrt = exportFormats.includes('SRT')
 
 	if (exportFormats.length === 0) {
 		return
@@ -388,37 +422,10 @@ async function processCsvFile(): Promise<void> {
 			newText = newTextSplit.join('')
 		}
 		processedChanges.push({ sequence, file, startTime: time, endTime: 0, language, text: newText })
-		if (exportFormats.includes('SRT')) {
-			if (i > 0) {
-				processedChanges[i - 1].endTime = time
-				addToFileQueue(
-					addSrtLine(
-						processedChanges[i - 1].sequence,
-						processedChanges[i - 1].startTime,
-						processedChanges[i - 1].endTime,
-						JSON.stringify({
-							text: processedChanges[i - 1].text,
-							file: processedChanges[i - 1].file,
-						})
-					),
-					'srt'
-				)
-			}
-		}
+		addToSRTFile(processedChanges, i, true, exportInSrt)
 		i++
 	}
-	processedChanges[i - 1].endTime = endDateTime!.getTime() - startDateTime.getTime()
-	if (exportFormats.includes('SRT')) {
-		addToFileQueue(
-			addSrtLine(
-				processedChanges[i - 1].sequence,
-				processedChanges[i - 1].startTime,
-				processedChanges[i - 1].endTime,
-				JSON.stringify({ text: processedChanges[i - 1].text, file: processedChanges[i - 1].file })
-			),
-			'srt'
-		)
-	}
+	addToSRTFile(processedChanges, i, false, exportInSrt)
 
 	if (exportFormats.includes('JSON')) {
 		addToFileQueue(JSON.stringify(processedChanges), 'json')
