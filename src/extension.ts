@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/semi */
-import { on } from 'events'
 import * as fs from 'fs'
 import * as util from 'util'
 import * as path from 'path'
@@ -38,25 +37,48 @@ function generateFileName(): string {
 }
 
 /**
- * Builds a CSV row with the given parameters.
- * @param sequence - The sequence number of the change.
- * @param rangeOffset - The offset of the changed range.
- * @param rangeLength - The length of the changed range.
- * @param text - The text of the change.
- * @param type - The type of the change (optional, defaults to 'content').
- * @returns A CSV row string with the provided information.
+ * Retrieves the language identifier of the currently active text editor.
+ *
+ * @return {string|undefined} The language identifier of the active text editor, or undefined if no editor is active.
  */
-function buildCsvRow(
-	sequence: number,
-	rangeOffset: number,
-	rangeLength: number,
-	text: string,
-	type: string = ChangeType.CONTENT
-): string {
+function getEditorLanguage(): string {
+	const editor = vscode.window.activeTextEditor
+	if (editor) {
+		console.log(editor.document.languageId)
+		return editor.document.languageId
+	}
+	return ''
+}
+
+interface CSVRowBuilder {
+	sequence: number
+	rangeOffset: number
+	rangeLength: number
+	text: string
+	type?: string
+}
+
+/**
+ * Builds a CSV row with the given parameters.
+ *
+ * @param {CSVRowBuilder} sequence - The sequence number of the change.
+ * @param {CSVRowBuilder} rangeOffset - The offset of the changed range.
+ * @param {CSVRowBuilder} rangeLength - The length of the changed range.
+ * @param {CSVRowBuilder} text - The text of the change.
+ * @param {string} type - The type of the change (optional, defaults to 'content').
+ * @return {string} A CSV row string with the provided information.
+ */
+function buildCsvRow({
+	sequence,
+	rangeOffset,
+	rangeLength,
+	text,
+	type = ChangeType.CONTENT,
+}: CSVRowBuilder): string {
 	const time = new Date().getTime() - startDateTime.getTime()
 	return `${sequence},${time},"${getEditorFileName()}",${rangeOffset},${rangeLength},"${escapeString(
 		text
-	)}",${type}\n`
+	)}",${getEditorLanguage()},${type}\n`
 }
 
 /**
@@ -64,7 +86,7 @@ function buildCsvRow(
  * @returns A string representing the relative path of the active text editor's file.
  */
 function getEditorFileName(): string {
-	return vscode.workspace.asRelativePath(vscode.window.activeTextEditor?.document.fileName || '')
+	return vscode.workspace.asRelativePath(vscode.window.activeTextEditor?.document.fileName ?? '')
 }
 
 const onChangeSubscription = vscode.workspace.onDidChangeTextDocument(event => {
@@ -75,7 +97,14 @@ const onChangeSubscription = vscode.workspace.onDidChangeTextDocument(event => {
 	if (editor && event.document === editor.document) {
 		event.contentChanges.forEach(change => {
 			sequence++
-			addToFileQueue(buildCsvRow(sequence, change.rangeOffset, change.rangeLength, change.text))
+			addToFileQueue(
+				buildCsvRow({
+					sequence,
+					rangeOffset: change.rangeOffset,
+					rangeLength: change.rangeLength,
+					text: change.text,
+				})
+			)
 			appendToFile()
 		})
 	}
@@ -102,14 +131,19 @@ async function startRecording(context: vscode.ExtensionContext): Promise<void> {
 	notificationWithProgress('Recording started')
 
 	const editorText = vscode.window.activeTextEditor?.document.getText()
-	const editorFileName = vscode.workspace.asRelativePath(
-		vscode.window.activeTextEditor?.document.fileName || ''
-	)
-	const heading = 'Sequence,Time,File,RangeOffset,RangeLength,Text,Type\n'
+	const heading = 'Sequence,Time,File,RangeOffset,RangeLength,Text,Language,Type\n'
 	sequence++
 	fileName = generateFileName()
 	addToFileQueue(heading)
-	addToFileQueue(buildCsvRow(sequence, 0, 0, editorText || '', ChangeType.TAB))
+	addToFileQueue(
+		buildCsvRow({
+			sequence,
+			rangeOffset: 0,
+			rangeLength: 0,
+			text: editorText ?? '',
+			type: ChangeType.TAB,
+		})
+	)
 	appendToFile()
 	context.subscriptions.push(onChangeSubscription)
 	updateStatusBarItem()
@@ -283,6 +317,7 @@ interface Change {
 	file: string
 	startTime: number
 	endTime: number
+	language: string
 	text: string
 }
 
@@ -316,7 +351,8 @@ async function processCsvFile(): Promise<void> {
 		const rangeOffset = parseInt(lineArr[3])
 		const rangeLength = parseInt(lineArr[4])
 		const text = unescapeString(removeDoubleQuotes(lineArr[5]))
-		const type = lineArr[6]
+		const language = lineArr[6]
+		const type = lineArr[7]
 
 		let newText = ''
 		if (type === ChangeType.TAB) {
@@ -326,7 +362,7 @@ async function processCsvFile(): Promise<void> {
 			newTextSplit.splice(rangeOffset, rangeLength, text)
 			newText = newTextSplit.join('')
 		}
-		processedChanges.push({ sequence, file, startTime: time, endTime: 0, text: newText })
+		processedChanges.push({ sequence, file, startTime: time, endTime: 0, language, text: newText })
 		if (i > 0) {
 			processedChanges[i - 1].endTime = time
 			addToFileQueue(
@@ -367,7 +403,7 @@ function removeDoubleQuotes(text: string): string {
 }
 
 /**
- * Unescapes special characters in a string.
+ * Unescape special characters in a string.
  * @param text - The text to unescape.
  * @returns A string with unescaped characters.
  */
@@ -425,10 +461,17 @@ export function activate(context: vscode.ExtensionContext): void {
 
 	vscode.window.onDidChangeActiveTextEditor(editor => {
 		if (editor && recording) {
-			const fileName = editor.document.fileName
 			const editorText = vscode.window.activeTextEditor?.document.getText()
 			sequence++
-			addToFileQueue(buildCsvRow(sequence, 0, 0, editorText || '', ChangeType.TAB))
+			addToFileQueue(
+				buildCsvRow({
+					sequence,
+					rangeOffset: 0,
+					rangeLength: 0,
+					text: editorText ?? '',
+					type: ChangeType.TAB,
+				})
+			)
 			appendToFile()
 		}
 	})
