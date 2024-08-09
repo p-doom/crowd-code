@@ -2,7 +2,7 @@
   "name": "vs-code-recorder",
   "displayName": "VS Code Recorder",
   "description": "Record the code in SRT and JSON format",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "publisher": "MattiaConsiglio",
   "icon": "icon.png",
   "engines": {
