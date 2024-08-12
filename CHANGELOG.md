@@ -9,8 +9,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Link to VS Code Recorder Player web app.
-
 ### Changed
 
 ### Deprecated
@@ -27,7 +25,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Output folder options for SRT and JSON files.
 - Option to create path outside of workspace.
+- Command to open the extension settings.
 - Log to output channel.
+- Link to VS Code Recorder Player web app.
 
 ### Fixed
 

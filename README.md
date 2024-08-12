@@ -20,13 +20,22 @@ The recorded changes are saved in a CSV file in your workspace.
 
 Then, this file is processed to generate output files in SRT and JSON formats, providing a detailed and accessible log of your coding session.
 
+## Play it back
+
+The output files can be played back in the [VS Code Recorder Player web app](https://github.com/mattia-consiglio/vs-code-recorder-player).
+
 ## Requirements
 
 This extension requires Visual Studio Code to run. No additional dependencies are needed.
 
 ## Extension Settings
 
-This extension does not contribute any additional settings to VS Code.
+- **Export Path**: Set the export path. Use `${workspaceFolder}` to export to the workspace folder. In case the path does not exist in the workspace, it will be created.
+- **Export Formats**: Select the formats to export recording data (SRT or JSON or both)
+- **Create Path Outside Workspace**: Create the export path outside the workspace
+- **Minimal Mode**: Enable or disable the minimal mode
+- **Display Time**: Enable or disable the display time
+-
 
 ## Known Issues
 
