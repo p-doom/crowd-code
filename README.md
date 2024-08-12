@@ -8,7 +8,7 @@ The VS Code Recorder Extension is designed to track and record changes made in t
 
 ## Usage
 
-![VS Code Recorder Extension](img/preview.gif)
+![VS Code Recorder Extension](https://raw.githubusercontent.com/mattia-consiglio/vs-code-recorder/main/img/preview.gif)
 
 To use the extension, click on "Start recording" in the status bar (on the right) and begin working in your text editor. The extension will automatically start recording changes. When you're done, stop the recording and the extension will finalize the data and save it to a CSV (source), JSON and SRT file.
 

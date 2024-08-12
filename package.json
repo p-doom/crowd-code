@@ -24,12 +24,16 @@
       {
         "command": "vs-code-recorder.stopRecording",
         "title": "VS Code Recorder: Stop Recording"
+      },
+      {
+        "command": "vs-code-recorder.openSettings",
+        "title": "VS Code Recorder: Open Settings"
       }
     ],
     "configuration": {
       "title": "VS Code Recorder",
       "properties": {
-        "vsCodeRecorder.exportFormats": {
+        "vsCodeRecorder.export.exportFormats": {
           "type": "array",
           "items": {
             "type": "string",
@@ -45,12 +49,22 @@
           ],
           "description": "Select the formats to export recording data"
         },
-        "vsCodeRecorder.minimalMode": {
+        "vsCodeRecorder.export.exportPath": {
+          "type": "string",
+          "default": "${workspaceFolder}/vs-code-recorder/",
+          "markdownDescription": "Set the export path. Use `${workspaceFolder}` to export to the workspace folder. In case the path does not exist in the workspace, it will be created."
+        },
+        "vsCodeRecorder.export.createPathOutsideWorkspace": {
+          "type": "boolean",
+          "default": false,
+          "description": "Create the export path outside the workspace"
+        },
+        "vsCodeRecorder.appearance.minimalMode": {
           "type": "boolean",
           "default": false,
           "description": "Enable minimal mode. Display only icons and no text"
         },
-        "vsCodeRecorder.showTimer": {
+        "vsCodeRecorder.appearance.showTimer": {
           "type": "boolean",
           "default": true,
           "description": "Show timer. The timer will be displayed even in minimal mode"
