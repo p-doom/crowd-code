@@ -33,7 +33,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Prevent to record the files in the export folder.
 
-## 1.0.7
+## 1.0.7 (skipped public release)
 
 ### Fixed
 
