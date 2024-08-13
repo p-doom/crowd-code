@@ -34,6 +34,18 @@
     "configuration": {
       "title": "VS Code Recorder",
       "properties": {
+        "vsCodeRecorder.export.exportPath": {
+          "type": "string",
+          "default": "${workspaceFolder}/vs-code-recorder/",
+          "markdownDescription": "Set the export path. Use `${workspaceFolder}` to export to the workspace folder. In case the path does not exist in the workspace, it will be created.",
+          "order": 0
+        },
+        "vsCodeRecorder.export.createPathOutsideWorkspace": {
+          "type": "boolean",
+          "default": false,
+          "description": "Create the export path outside the workspace",
+          "order": 1
+        },
         "vsCodeRecorder.export.exportFormats": {
           "type": "array",
           "items": {
@@ -48,27 +60,20 @@
             "JSON",
             "SRT"
           ],
-          "description": "Select the formats to export recording data"
-        },
-        "vsCodeRecorder.export.exportPath": {
-          "type": "string",
-          "default": "${workspaceFolder}/vs-code-recorder/",
-          "markdownDescription": "Set the export path. Use `${workspaceFolder}` to export to the workspace folder. In case the path does not exist in the workspace, it will be created."
-        },
-        "vsCodeRecorder.export.createPathOutsideWorkspace": {
-          "type": "boolean",
-          "default": false,
-          "description": "Create the export path outside the workspace"
+          "description": "Select the formats to export recording data",
+          "order": 2
         },
         "vsCodeRecorder.appearance.minimalMode": {
           "type": "boolean",
           "default": false,
-          "description": "Enable minimal mode. Display only icons and no text"
+          "description": "Enable minimal mode. Display only icons and no text",
+          "order": 3
         },
         "vsCodeRecorder.appearance.showTimer": {
           "type": "boolean",
           "default": true,
-          "description": "Show timer. The timer will be displayed even in minimal mode"
+          "description": "Show timer. The timer will be displayed even in minimal mode",
+          "order": 4
         }
       }
     }
