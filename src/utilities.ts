@@ -1,24 +1,50 @@
 /* eslint-disable @typescript-eslint/semi */
 import * as vscode from 'vscode'
-import * as fs from 'fs'
-import * as path from 'path'
+import * as fs from 'node:fs'
+import * as path from 'node:path'
 
 export const outputChannel = vscode.window.createOutputChannel('VS Code Recorder')
 
+/**
+ * Retrieves the configuration object for the 'vsCodeRecorder' extension.
+ *
+ * @returns The configuration object for the 'vsCodeRecorder' extension.
+ */
 export function getConfig() {
 	return vscode.workspace.getConfiguration('vsCodeRecorder')
 }
 
+/**
+ * Creates a directory at the specified path if it does not already exist.
+ *
+ * @param path - The path of the directory to create.
+ * @returns Void.
+ */
 export function createPath(path: string) {
 	if (!fs.existsSync(path)) {
 		fs.mkdirSync(path)
 	}
 }
 
-export function getExportPath(): string | void {
+/**
+ * Retrieves the export path for the VS Code Recorder extension, handling various scenarios such as:
+ * - If no export path is specified, it prompts the user to reset to default or open the settings.
+ * - If the export path starts with '${workspaceFolder}', it replaces it with the actual workspace path.
+ * - If the export path does not exist and the 'export.createPathOutsideWorkspace' setting is false, it prompts the user to reset to default or open the settings.
+ * - It trims, normalizes, and updates the export path in the extension settings.
+ *
+ * @returns The normalized and updated export path, or `undefined` if an error occurred.
+ */
+export function getExportPath(): string | undefined {
 	const exportPath = getConfig().get<string>('export.exportPath')
 	let outputExportPath = exportPath
 
+	/**
+	 * Handles the user's selection when prompted to reset the export path to the default or open the settings.
+	 *
+	 * @param selection - The user's selection, which can be 'Reset to default', 'Open Settings', or 'Cancel'.
+	 * @returns Void.
+	 */
 	function handleSelection(selection: string | undefined) {
 		if (selection === 'Reset to default') {
 			getConfig().update('export.exportPath', undefined, vscode.ConfigurationTarget.Global)
@@ -66,9 +92,8 @@ export function getExportPath(): string | void {
 				.then(selection => handleSelection(selection))
 			logToOutput('Export path does not exist', 'error')
 			return
-		} else {
-			createPath(outputExportPath)
 		}
+		createPath(outputExportPath)
 	}
 
 	outputExportPath = outputExportPath.trim()

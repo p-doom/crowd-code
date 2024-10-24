@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/semi */
-import * as fs from 'fs'
-import * as util from 'util'
-import * as path from 'path'
+import * as fs from 'node:fs'
+import * as util from 'node:util'
+import * as path from 'node:path'
 import * as vscode from 'vscode'
-import * as readline from 'readline'
+import * as readline from 'node:readline'
 import {
 	getEditorFileName,
 	escapeString,
@@ -84,6 +84,12 @@ function buildCsvRow({
 	)}",${getEditorLanguage()},${type}\n`
 }
 
+/**
+ * Checks if the current file being edited is within the configured export path.
+ * This is used to determine if the current file should be recorded or not.
+ *
+ * @returns {boolean} `true` if the current file is within the export path, `false` otherwise.
+ */
 function isCurrentFileExported() {
 	const editor = vscode.window.activeTextEditor
 	if (!editor) {
@@ -110,7 +116,7 @@ const onChangeSubscription = vscode.workspace.onDidChangeTextDocument(event => {
 	}
 	const editor = vscode.window.activeTextEditor
 	if (editor && event.document === editor.document) {
-		event.contentChanges.forEach(change => {
+		for (const change of event.contentChanges) {
 			sequence++
 			addToFileQueue(
 				buildCsvRow({
@@ -121,7 +127,7 @@ const onChangeSubscription = vscode.workspace.onDidChangeTextDocument(event => {
 				})
 			)
 			appendToFile()
-		})
+		}
 	}
 })
 
@@ -209,19 +215,19 @@ function stopRecording(force = false): void {
 	}
 	if (recording) {
 		if (getConfig().get('appearance.showTimer') === false) {
-			statusBarItem.text = `$(debug-stop)`
+			statusBarItem.text = '$(debug-stop)'
 			statusBarItem.tooltip = `Stop Recording\nCurrent time: ${formatDisplayTime(timer)}`
 		}
 		if (getConfig().get('appearance.showTimer') === true) {
 			statusBarItem.text = `$(debug-stop) ${formatDisplayTime(timer)}`
-			statusBarItem.tooltip = `Stop Recording`
+			statusBarItem.tooltip = 'Stop Recording'
 		}
 		statusBarItem.command = stopRecordingCommand
 	} else {
 		if (getConfig().get('appearance.minimalMode') === true) {
-			statusBarItem.text = `$(circle-large-filled)`
+			statusBarItem.text = '$(circle-large-filled)'
 		} else {
-			statusBarItem.text = `$(circle-large-filled) Start Recording`
+			statusBarItem.text = '$(circle-large-filled) Start Recording'
 		}
 		statusBarItem.tooltip = 'Start Recording'
 		statusBarItem.command = startRecordingCommand
@@ -261,6 +267,16 @@ async function addToFile(filePath: string, text: string): Promise<void> {
 	}
 }
 
+/**
+ * Appends an SRT line to the file queue for the previous change.
+ *
+ * This function is responsible for generating the SRT format line for the previous change and adding it to the file queue.
+ * It checks if the SRT export format is enabled, and if so, it generates the SRT line for the previous change and adds it to the file queue.
+ *
+ * @param processedChanges - An array of processed changes.
+ * @param i - The index of the current change in the processedChanges array.
+ * @param exportInSrt - A boolean indicating whether the SRT export format is enabled.
+ */
 function addToSRTFile(processedChanges: Change[], i: number, exportInSrt: boolean) {
 	if (!exportInSrt) {
 		return
@@ -306,25 +322,25 @@ async function processCsvFile(): Promise<void> {
 	if (!exportPath) {
 		return
 	}
-	const filePath = path.join(exportPath, fileName + '.csv')
+	const filePath = path.join(exportPath, `${fileName}.csv`)
 	const fileStream = fs.createReadStream(filePath)
 	const rl = readline.createInterface({
 		input: fileStream,
-		crlfDelay: Infinity,
+		crlfDelay: Number.POSITIVE_INFINITY,
 	})
 	let i = 0
 	const processedChanges: Change[] = []
 	for await (const line of rl) {
 		const lineArr = line.split(/,(?=(?:[^"]*"[^"]*")*[^"]*$)/)
 
-		const sequence = parseInt(lineArr[0])
-		if (isNaN(sequence)) {
+		const sequence = Number.parseInt(lineArr[0])
+		if (Number.isNaN(sequence)) {
 			continue
 		}
-		const time = parseInt(lineArr[1])
+		const time = Number.parseInt(lineArr[1])
 		const file = removeDoubleQuotes(lineArr[2])
-		const rangeOffset = parseInt(lineArr[3])
-		const rangeLength = parseInt(lineArr[4])
+		const rangeOffset = Number.parseInt(lineArr[3])
+		const rangeLength = Number.parseInt(lineArr[4])
 		const text = unescapeString(removeDoubleQuotes(lineArr[5]))
 		const language = lineArr[6]
 		const type = lineArr[7]
@@ -344,6 +360,7 @@ async function processCsvFile(): Promise<void> {
 		}
 		i++
 	}
+	// biome-ignore lint/style/noNonNullAssertion: <explanation>
 	processedChanges[i - 1].endTime = endDateTime!.getTime() - startDateTime.getTime()
 	addToSRTFile(processedChanges, i, exportInSrt)
 
@@ -371,13 +388,17 @@ function addSrtLine(sequence: number, start: number, end: number, text: string):
  * @param content - The content to add.
  * @param fileExtension - The file extension (optional, defaults to 'csv').
  */
-function addToFileQueue(content: string, fileExtension: string = 'csv'): void {
+function addToFileQueue(content: string, fileExtension = 'csv'): void {
 	fileQueue.push({
-		name: fileName + '.' + fileExtension,
+		name: `${fileName}.${fileExtension}`,
 		content: content,
 	})
 }
 
+/**
+ * Handles changes to the extension's configuration.
+ * @param event - The configuration change event.
+ */
 function onConfigurationChange(event: vscode.ConfigurationChangeEvent) {
 	if (event.affectsConfiguration('vsCodeRecorder')) {
 		updateStatusBarItem()
