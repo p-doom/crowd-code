@@ -1,0 +1,23 @@
+{
+  "Reset to default": "Ripristina predefiniti",
+  "Open Settings": "Apri Impostazioni",
+  "Cancel": "Annulla",
+  "No export path specified": "Nessun percorso di esportazione specificato",
+  "error.workspaceFolderNotFound": "Cartella di lavoro non trovata",
+  "Export path does not exist": "Il percorso di esportazione non esiste",
+  "No active text editor": "Nessun editor di testo attivo",
+  "Already recording": "Registrazione già in corso",
+  "Recording started": "Registrazione avviata",
+  "Not recording": "Nessuna registrazione in corso",
+  "Recording cancelled": "Registrazione annullata",
+  "Recording finished": "Registrazione completata",
+  "No workspace folder found. To process the recording is needed a workspace folder": "Nessuna cartella di lavoro trovata. Per elaborare la registrazione è necessaria una cartella di lavoro",
+  "Recording end date time is not set": "Data e ora di fine registrazione non impostata",
+  "Recording start date time is not set": "Data e ora di inizio registrazione non impostata",
+  "No export formats specified": "Nessun formato di esportazione specificato",
+  "Current time: {0}": "Tempo attuale: {0}",
+  "Stop Recording": "Ferma Registrazione",
+  "Start Recording": "Avvia Registrazione",
+  "Activating VS Code Recorder": "Attivazione di VS Code Recorder",
+  "Deactivating VS Code Recorder": "Disattivazione di VS Code Recorder"
+}

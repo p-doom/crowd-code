@@ -1,13 +1,14 @@
 {
   "name": "vs-code-recorder",
-  "displayName": "VS Code Recorder",
-  "description": "Record the code in SRT and JSON format",
+  "displayName": "%displayName%",
+  "description": "%description%",
   "version": "1.0.11",
   "publisher": "MattiaConsiglio",
   "icon": "icon.png",
   "engines": {
     "vscode": "^1.89.0"
   },
+  "main": "./out/extension.js",
   "categories": [
     "Other",
     "Education"
@@ -15,35 +16,35 @@
   "activationEvents": [
     "onStartupFinished"
   ],
-  "main": "./dist/extension.js",
+  "l10n": "./l10n",
   "contributes": {
     "commands": [
       {
         "command": "vs-code-recorder.startRecording",
-        "title": "VS Code Recorder: Start Recording"
+        "title": "%command.startRecording.title%"
       },
       {
         "command": "vs-code-recorder.stopRecording",
-        "title": "VS Code Recorder: Stop Recording"
+        "title": "%command.stopRecording.title%"
       },
       {
         "command": "vs-code-recorder.openSettings",
-        "title": "VS Code Recorder: Open Settings"
+        "title": "%command.openSettings.title%"
       }
     ],
     "configuration": {
-      "title": "VS Code Recorder",
+      "title": "%config.title%",
       "properties": {
         "vsCodeRecorder.export.exportPath": {
           "type": "string",
           "default": "${workspaceFolder}/vs-code-recorder/",
-          "markdownDescription": "Set the export path. Use `${workspaceFolder}` to export to the workspace folder. In case the path does not exist in the workspace, it will be created.",
+          "markdownDescription": "%config.exportPath.description%",
           "order": 0
         },
         "vsCodeRecorder.export.createPathOutsideWorkspace": {
           "type": "boolean",
           "default": false,
-          "description": "Create the export path outside the workspace",
+          "description": "%config.createPathOutsideWorkspace.description%",
           "order": 1
         },
         "vsCodeRecorder.export.exportFormats": {
@@ -60,19 +61,19 @@
             "JSON",
             "SRT"
           ],
-          "description": "Select the formats to export recording data",
+          "description": "%config.exportFormats.description%",
           "order": 2
         },
         "vsCodeRecorder.appearance.minimalMode": {
           "type": "boolean",
           "default": false,
-          "description": "Enable minimal mode. Display only icons and no text",
+          "description": "%config.minimalMode.description%",
           "order": 3
         },
         "vsCodeRecorder.appearance.showTimer": {
           "type": "boolean",
           "default": true,
-          "description": "Show timer. The timer will be displayed even in minimal mode",
+          "description": "%config.showTimer.description%",
           "order": 4
         }
       }
@@ -94,17 +95,21 @@
     "test": "vscode-test"
   },
   "devDependencies": {
-    "@types/vscode": "^1.89.0",
     "@types/mocha": "^10.0.6",
     "@types/node": "18.x",
+    "@types/vscode": "^1.89.0",
     "@typescript-eslint/eslint-plugin": "^7.11.0",
     "@typescript-eslint/parser": "^7.11.0",
-    "eslint": "^8.57.0",
-    "typescript": "^5.4.5",
-    "ts-loader": "^9.5.1",
-    "webpack": "^5.91.0",
-    "webpack-cli": "^5.1.4",
+    "@vscode/l10n-dev": "^0.0.35",
     "@vscode/test-cli": "^0.0.9",
-    "@vscode/test-electron": "^2.4.0"
+    "@vscode/test-electron": "^2.4.0",
+    "eslint": "^8.57.0",
+    "ts-loader": "^9.5.1",
+    "typescript": "^5.4.5",
+    "webpack": "^5.91.0",
+    "webpack-cli": "^5.1.4"
+  },
+  "dependencies": {
+    "@vscode/l10n": "^0.0.18"
   }
 }

@@ -1,7 +1,13 @@
-/* eslint-disable @typescript-eslint/semi */
 import * as vscode from 'vscode'
 import * as fs from 'node:fs'
 import * as path from 'node:path'
+import { contributes } from '../package.json'
+
+interface DefaultConfiguration {
+	[key: string]: (typeof defaultConfiguration)[keyof typeof defaultConfiguration]
+}
+
+const defaultConfiguration = contributes.configuration.properties
 
 export const outputChannel = vscode.window.createOutputChannel('VS Code Recorder')
 
@@ -38,6 +44,9 @@ export function createPath(path: string) {
 export function getExportPath(): string | undefined {
 	const exportPath = getConfig().get<string>('export.exportPath')
 	let outputExportPath = exportPath
+	const resetToDefaultMessage = vscode.l10n.t('Reset to default')
+	const openSettingsMessage = vscode.l10n.t('Open Settings')
+	const cancelMessage = vscode.l10n.t('Cancel')
 
 	/**
 	 * Handles the user's selection when prompted to reset the export path to the default or open the settings.
@@ -46,10 +55,10 @@ export function getExportPath(): string | undefined {
 	 * @returns Void.
 	 */
 	function handleSelection(selection: string | undefined) {
-		if (selection === 'Reset to default') {
+		if (selection === resetToDefaultMessage) {
 			getConfig().update('export.exportPath', undefined, vscode.ConfigurationTarget.Global)
 		}
-		if (selection === 'Open Settings') {
+		if (selection === vscode.l10n.t('Open Settings')) {
 			vscode.commands.executeCommand(
 				'workbench.action.openSettings',
 				'vsCodeRecorder.export.exportPath'
@@ -58,20 +67,25 @@ export function getExportPath(): string | undefined {
 	}
 
 	if (!outputExportPath) {
+		const exportPathNotFoundMessage = vscode.l10n.t('No export path specified')
 		vscode.window
-			.showErrorMessage(' No export path specified', 'Reset to default', 'Open Settings', 'Cancel')
-			// deepcode ignore PromiseNotCaughtGeneral: catch method not available
+			.showErrorMessage(
+				exportPathNotFoundMessage,
+				resetToDefaultMessage,
+				openSettingsMessage,
+				cancelMessage
+			)
 			.then(selection => handleSelection(selection))
-		logToOutput('No export path specified', 'error')
+		logToOutput(exportPathNotFoundMessage, 'error')
 		return
 	}
 
 	if (outputExportPath?.startsWith('${workspaceFolder}')) {
 		const workspacePath = vscode.workspace.workspaceFolders?.[0].uri.fsPath
 		if (!workspacePath) {
-			vscode.window.showErrorMessage('No workspace folder found')
-
-			logToOutput('No workspace folder found', 'error')
+			const errorMessage = vscode.l10n.t('error.workspaceFolderNotFound')
+			vscode.window.showErrorMessage(errorMessage)
+			logToOutput(errorMessage, 'error')
 			return
 		}
 		outputExportPath = outputExportPath.replace('${workspaceFolder}', workspacePath)
@@ -81,16 +95,17 @@ export function getExportPath(): string | undefined {
 			!fs.existsSync(outputExportPath) &&
 			getConfig().get<boolean>('export.createPathOutsideWorkspace', false) === false
 		) {
+			const exportPathNotFoundMessage = vscode.l10n.t('Export path does not exist')
 			vscode.window
 				.showErrorMessage(
-					'Export path does not exist',
-					'Reset to default',
-					'Open Settings',
-					'Cancel'
+					exportPathNotFoundMessage,
+					resetToDefaultMessage,
+					openSettingsMessage,
+					cancelMessage
 				)
 				// deepcode ignore PromiseNotCaughtGeneral: catch method not available
 				.then(selection => handleSelection(selection))
-			logToOutput('Export path does not exist', 'error')
+			logToOutput(exportPathNotFoundMessage, 'error')
 			return
 		}
 		createPath(outputExportPath)
@@ -108,6 +123,14 @@ export function getExportPath(): string | undefined {
 		outputExportPath = outputExportPath.replaceAll('/', path.sep)
 	}
 	return outputExportPath
+}
+
+export function setDefaultOptions() {
+	const config = getConfig()
+	for (const [key, value] of Object.entries(defaultConfiguration)) {
+		const configKey = key.replace('vsCodeRecorder.', '')
+		config.update(configKey, value.default, vscode.ConfigurationTarget.Workspace)
+	}
 }
 
 /**

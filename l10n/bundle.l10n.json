@@ -1,0 +1,23 @@
+{
+  "Reset to default": "Reset to default",
+  "Open Settings": "Open Settings",
+  "Cancel": "Cancel",
+  "No export path specified": "No export path specified",
+  "error.workspaceFolderNotFound": "error.workspaceFolderNotFound",
+  "Export path does not exist": "Export path does not exist",
+  "No active text editor": "No active text editor",
+  "Already recording": "Already recording",
+  "Recording started": "Recording started",
+  "Not recording": "Not recording",
+  "Recording cancelled": "Recording cancelled",
+  "Recording finished": "Recording finished",
+  "No workspace folder found. To process the recording is needed a workspace folder": "No workspace folder found. To process the recording is needed a workspace folder",
+  "Recording end date time is not set": "Recording end date time is not set",
+  "Recording start date time is not set": "Recording start date time is not set",
+  "No export formats specified": "No export formats specified",
+  "Current time: {0}": "Current time: {0}",
+  "Stop Recording": "Stop Recording",
+  "Start Recording": "Start Recording",
+  "Activating VS Code Recorder": "Activating VS Code Recorder",
+  "Deactivating VS Code Recorder": "Deactivating VS Code Recorder"
+}

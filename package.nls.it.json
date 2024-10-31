@@ -1,0 +1,13 @@
+{
+	"displayName": "VS Code Recorder",
+	"description": "Registra il codice in formato SRT e JSON",
+	"command.startRecording.title": "VS Code Recorder: Avvia Registrazione",
+	"command.stopRecording.title": "VS Code Recorder: Ferma Registrazione",
+	"command.openSettings.title": "VS Code Recorder: Apri Impostazioni",
+	"config.title": "VS Code Recorder",
+	"config.exportPath.description": "Imposta il percorso di esportazione. Usa `${workspaceFolder}` per esportare nella cartella di lavoro. Nel caso in cui il percorso non esista nell'area di lavoro, verrà creato.",
+	"config.createPathOutsideWorkspace.description": "Crea il percorso di esportazione al di fuori dell'area di lavoro",
+	"config.exportFormats.description": "Seleziona i formati per esportare i dati di registrazione",
+	"config.minimalMode.description": "Abilita la modalità minimale. Mostra solo icone senza testo",
+	"config.showTimer.description": "Mostra il timer. Il timer sarà visualizzato anche in modalità minimale"
+}
