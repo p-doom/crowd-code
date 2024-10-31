@@ -1,0 +1,10 @@
+{
+	"vsCodeRecorder.export.exportPath": "${workspaceFolder}",
+	"vsCodeRecorder.export.createPathOutsideWorkspace": false,
+	"vsCodeRecorder.export.exportFormats": [
+		"JSON",
+		"SRT"
+	],
+	"vsCodeRecorder.appearance.minimalMode": false,
+	"vsCodeRecorder.appearance.showTimer": true
+}

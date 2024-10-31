@@ -1,0 +1,10 @@
+{
+	"files": {
+		"ignore": [
+			"node_modules/*",
+			"out",
+			".vscode/**/*.js"
+		],
+		"ignoreUnknown": true
+	}
+}

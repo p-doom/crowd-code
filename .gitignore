@@ -1,5 +1,8 @@
 node_modules
-/dist
+dist
 *.vsix
 *.ai
-/vs-code-recorder
+vs-code-recorder
+.vscode-test/
+out
+test-workspace/vscode-recorder/*
