@@ -150,17 +150,29 @@ export function logToOutput(message: string, type: 'info' | 'success' | 'error' 
 }
 
 /**
- * Generates a unique file name based on the current date and time.
- * @param isExport - Whether the file is an export.
- * @returns A string representing the generated file name or null if the date is not valid.
+ * Generates a file name based on the current date and time.
+ * @param date - The date to use for generating the file name.
+ * @param isExport - Whether the file is being exported.
+ * @returns The generated file name.
  */
-export function generateFileName(date: Date, isExport = false): string | null {
+export function generateFileName(date: Date | null, isExport = false): string | undefined {
 	if (!date) {
-		return null
+		return
 	}
+	const year = date.getFullYear()
+	const month = (date.getMonth() + 1).toString().padStart(2, '0')
+	const day = date.getDate().toString().padStart(2, '0')
+	const hours = date.getHours().toString().padStart(2, '0')
+	const minutes = date.getMinutes().toString().padStart(2, '0')
+	const seconds = date.getSeconds().toString().padStart(2, '0')
+	const milliseconds = date.getMilliseconds().toString().padStart(2, '0')
 
-	const prefix = isExport ? 'vs-code-recorder-export' : 'vs-code-recorder-source'
-	return `${prefix}-${date.getFullYear()}_${date.getMonth()}_${date.getDate()}-${date.getHours()}.${date.getMinutes()}.${date.getSeconds()}.${date.getMilliseconds()}`
+	const folderName = `vs-code-recorder-${year}_${month}_${day}-${hours}.${minutes}.${seconds}.${milliseconds}`
+
+	if (isExport) {
+		return `${folderName}/recording`
+	}
+	return folderName
 }
 
 /**

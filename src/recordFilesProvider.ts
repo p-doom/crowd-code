@@ -7,14 +7,23 @@ export class RecordFile extends vscode.TreeItem {
 	constructor(
 		public readonly label: string,
 		public readonly collapsibleState: vscode.TreeItemCollapsibleState,
-		public readonly command?: vscode.Command
+		public readonly command?: vscode.Command,
+		public readonly isFolder: boolean = false
 	) {
 		super(label, collapsibleState)
+
+		if (isFolder) {
+			this.iconPath = new vscode.ThemeIcon('folder')
+			this.contextValue = 'folder'
+		} else {
+			this.iconPath = new vscode.ThemeIcon('file')
+			this.contextValue = 'file'
+		}
 	}
 }
 
 export class RecordFilesProvider implements vscode.TreeDataProvider<RecordFile> {
-	private readonly _onDidChangeTreeData: vscode.EventEmitter<RecordFile | undefined | null> =
+	private _onDidChangeTreeData: vscode.EventEmitter<RecordFile | undefined | null> =
 		new vscode.EventEmitter<RecordFile | undefined | null>()
 	readonly onDidChangeTreeData: vscode.Event<RecordFile | undefined | null> =
 		this._onDidChangeTreeData.event
@@ -28,27 +37,62 @@ export class RecordFilesProvider implements vscode.TreeDataProvider<RecordFile> 
 	}
 
 	async getChildren(element?: RecordFile): Promise<RecordFile[]> {
-		if (element) {
-			return []
-		}
-
 		const exportPath = getExportPath()
 		if (!exportPath) {
 			return []
 		}
 
 		try {
-			const files = fs.readdirSync(exportPath)
+			// If no element is provided, show both folders and files in the root
+			if (!element) {
+				const items = fs.readdirSync(exportPath)
+				const folders: RecordFile[] = []
+				const files: RecordFile[] = []
+
+				for (const item of items) {
+					const itemPath = path.join(exportPath, item)
+					const isDirectory = fs.statSync(itemPath).isDirectory()
+
+					if (isDirectory && item.startsWith('vs-code-recorder-')) {
+						folders.push(
+							new RecordFile(item, vscode.TreeItemCollapsibleState.Collapsed, undefined, true)
+						)
+					} else if (
+						!isDirectory &&
+						(item.endsWith('.json') || item.endsWith('.srt') || item.endsWith('.csv')) &&
+						item.startsWith('vs-code-recorder-')
+					) {
+						files.push(
+							new RecordFile(item, vscode.TreeItemCollapsibleState.None, {
+								command: 'vscode.open',
+								title: 'Open File',
+								arguments: [vscode.Uri.file(itemPath)],
+							})
+						)
+					}
+				}
+
+				// Sort folders and files in descending order (newest first)
+				folders.sort((a, b) => b.label.localeCompare(a.label))
+				files.sort((a, b) => b.label.localeCompare(a.label))
+
+				return [...folders, ...files]
+			}
+
+			// If an element is provided, show its contents
+			const folderPath = path.join(exportPath, element.label)
+			const files = fs
+				.readdirSync(folderPath)
+				.filter(file => file.endsWith('.json') || file.endsWith('.srt') || file.endsWith('.csv'))
+				.map(
+					file =>
+						new RecordFile(file, vscode.TreeItemCollapsibleState.None, {
+							command: 'vscode.open',
+							title: 'Open File',
+							arguments: [vscode.Uri.file(path.join(folderPath, file))],
+						})
+				)
 			return files
-				.filter(file => file.startsWith('vs-code-recorder-'))
-				.map(file => {
-					const filePath = path.join(exportPath, file)
-					return new RecordFile(file, vscode.TreeItemCollapsibleState.None, {
-						command: 'vscode.open',
-						title: 'Open File',
-						arguments: [vscode.Uri.file(filePath)],
-					})
-				})
 		} catch (err) {
 			console.error('Error reading directory:', err)
 			return []

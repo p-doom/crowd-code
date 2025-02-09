@@ -109,8 +109,17 @@ const onChangeSubscription = vscode.workspace.onDidChangeTextDocument(event => {
 })
 
 /**
+ * Creates the recording folder if it doesn't exist.
+ * @param folderPath - The path to the recording folder.
+ */
+function createRecordingFolder(folderPath: string): void {
+	if (!fs.existsSync(folderPath)) {
+		fs.mkdirSync(folderPath, { recursive: true })
+	}
+}
+
+/**
  * Starts the recording process and initializes necessary variables.
- * @param context - The extension context.
  */
 export async function startRecording(): Promise<void> {
 	if (!vscode.window.activeTextEditor) {
@@ -127,9 +136,20 @@ export async function startRecording(): Promise<void> {
 	if (!exportPath) {
 		return
 	}
+
+	recording.startDateTime = new Date()
+	const folderName = generateFileName(recording.startDateTime)
+	if (!folderName) {
+		stopRecording(true)
+		return
+	}
+
+	// Create the recording folder
+	const recordingPath = path.join(exportPath, folderName)
+	createRecordingFolder(recordingPath)
+
 	recording.isRecording = true
 	recording.timer = 0
-	recording.startDateTime = new Date()
 	recording.endDateTime = null
 	recording.sequence = 0
 	intervalId = setInterval(() => {
@@ -142,12 +162,6 @@ export async function startRecording(): Promise<void> {
 	const editorText = vscode.window.activeTextEditor?.document.getText()
 
 	recording.sequence++
-	const fileName = generateFileName(recording.startDateTime)
-	if (!fileName) {
-		stopRecording(true)
-		return
-	}
-
 	const csvRow = {
 		sequence: recording.sequence,
 		rangeOffset: 0,
