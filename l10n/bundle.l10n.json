@@ -31,5 +31,6 @@
   "config.exportFormats.description": "Formats to export the recording in.",
   "config.minimalMode.description": "Whether to show only the icon in the status bar when recording is stopped.",
   "config.showTimer.description": "Whether to show the timer in the status bar when recording.",
-  "view.title": "VS Code Recorder"
+  "view.recordFiles.name": "Record Files",
+  "view.recordFiles.contextualTitle": "Record Files"
 }

@@ -31,5 +31,6 @@
   "config.exportFormats.description": "Formati in cui esportare la registrazione.",
   "config.minimalMode.description": "Se mostrare solo l'icona nella barra di stato quando la registrazione è ferma.",
   "config.showTimer.description": "Se mostrare il timer nella barra di stato quando si registra.",
-  "view.title": "VS Code Recorder"
+  "view.recordFiles.name": "File di registrazione",
+  "view.recordFiles.contextualTitle": "File di registrazione"
 }

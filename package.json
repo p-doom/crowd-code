@@ -45,9 +45,9 @@
       "vs-code-recorder": [
         {
           "id": "recordFiles",
-          "name": "Record Files",
+          "name": "%view.recordFiles.name%",
           "icon": "icon.svg",
-          "contextualTitle": "Record Files"
+          "contextualTitle": "%view.recordFiles.contextualTitle%"
         }
       ]
     },
