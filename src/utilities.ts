@@ -116,6 +116,7 @@ export function getExportPath(): string | undefined {
 	if (!outputExportPath.endsWith('/')) {
 		outputExportPath += '/'
 	}
+
 	if (!exportPath?.startsWith('${workspaceFolder}')) {
 		getConfig().update('export.exportPath', outputExportPath, vscode.ConfigurationTarget.Global)
 	}
@@ -150,11 +151,16 @@ export function logToOutput(message: string, type: 'info' | 'success' | 'error' 
 
 /**
  * Generates a unique file name based on the current date and time.
- * @returns A string representing the generated file name.
+ * @param isExport - Whether the file is an export.
+ * @returns A string representing the generated file name or null if the date is not valid.
  */
-export function generateFileName(): string {
-	const date = new Date()
-	return `vs-code-recorder-${date.getFullYear()}_${date.getMonth()}_${date.getDate()}-${date.getHours()}.${date.getMinutes()}.${date.getSeconds()}.${date.getMilliseconds()}`
+export function generateFileName(date: Date, isExport = false): string | null {
+	if (!date) {
+		return null
+	}
+
+	const prefix = isExport ? 'vs-code-recorder-export' : 'vs-code-recorder-source'
+	return `${prefix}-${date.getFullYear()}_${date.getMonth()}_${date.getDate()}-${date.getHours()}.${date.getMinutes()}.${date.getSeconds()}.${date.getMilliseconds()}`
 }
 
 /**

@@ -1,0 +1,61 @@
+.container {
+	padding: 15px;
+}
+
+.action-button {
+	width: 100%;
+	padding: 8px;
+	margin-bottom: 15px;
+	border: none;
+	border-radius: 4px;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	font-size: 13px;
+}
+
+.action-button.start {
+	background-color: var(--vscode-button-background);
+	color: var(--vscode-button-foreground);
+}
+
+.action-button.stop {
+	background-color: var(--vscode-errorForeground);
+	color: var(--vscode-button-foreground);
+}
+
+.recording-status {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin-bottom: 15px;
+	padding: 8px;
+	background-color: var(--vscode-editor-background);
+	border-radius: 4px;
+}
+
+.recording-indicator {
+	width: 10px;
+	height: 10px;
+	border-radius: 50%;
+	background-color: var(--vscode-errorForeground);
+	animation: blink 1s infinite;
+}
+
+@keyframes blink {
+	0% {
+		opacity: 1;
+	}
+	50% {
+		opacity: 0.3;
+	}
+	100% {
+		opacity: 1;
+	}
+}
+
+.recordings-list {
+	margin-top: 20px;
+}

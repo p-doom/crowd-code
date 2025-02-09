@@ -18,48 +18,6 @@
   ],
   "l10n": "./l10n",
   "contributes": {
-    "viewsContainers": {
-      "activitybar": [
-        {
-          "id": "vs-code-recorder",
-          "title": "VS Code Recorder",
-          "icon": "icon.svg"
-        }
-      ]
-    },
-    "views": {
-      "package-explorer": [
-        {
-          "id": "nodeDependencies",
-          "name": "Node Dependencies",
-          "icon": "media/dep.svg",
-          "contextualTitle": "Package Explorer"
-        }
-      ],
-      "explorer": [
-        {
-          "id": "jsonOutline",
-          "name": "Json Outline",
-          "when": "jsonOutlineEnabled"
-        },
-        {
-          "id": "ftpExplorer",
-          "name": "FTP Explorer"
-        },
-        {
-          "id": "fileExplorer",
-          "name": "File Explorer"
-        },
-        {
-          "id": "testView",
-          "name": "Test View"
-        },
-        {
-          "id": "testViewDragAndDrop",
-          "name": "Test View Drag and Drop"
-        }
-      ]
-    },
     "commands": [
       {
         "command": "vs-code-recorder.startRecording",
@@ -74,6 +32,25 @@
         "title": "%command.openSettings.title%"
       }
     ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "vs-code-recorder",
+          "title": "VS Code Recorder",
+          "icon": "icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "vs-code-recorder": [
+        {
+          "id": "recordFiles",
+          "name": "Record Files",
+          "icon": "icon.svg",
+          "contextualTitle": "Record Files"
+        }
+      ]
+    },
     "configuration": {
       "title": "%config.title%",
       "properties": {

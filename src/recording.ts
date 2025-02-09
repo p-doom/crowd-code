@@ -31,7 +31,6 @@ export const recording: Recording = {
 	timer: 0,
 	startDateTime: null,
 	endDateTime: null,
-	fileName: '',
 	sequence: 0,
 }
 
@@ -76,15 +75,9 @@ export function buildCsvRow({
  */
 export function isCurrentFileExported(): boolean {
 	const editor = vscode.window.activeTextEditor
-	if (!editor) {
-		return false
-	}
-	const filename = vscode.window.activeTextEditor?.document.fileName
-	if (!filename) {
-		return false
-	}
+	const filename = editor?.document.fileName.replaceAll('\\', '/')
 	const exportPath = getExportPath()
-	if (!exportPath) {
+	if (!editor || !filename || !exportPath) {
 		return false
 	}
 	return filename.startsWith(exportPath)
@@ -149,7 +142,11 @@ export async function startRecording(): Promise<void> {
 	const editorText = vscode.window.activeTextEditor?.document.getText()
 
 	recording.sequence++
-	recording.fileName = generateFileName()
+	const fileName = generateFileName(recording.startDateTime)
+	if (!fileName) {
+		stopRecording(true)
+		return
+	}
 
 	const csvRow = {
 		sequence: recording.sequence,
@@ -259,10 +256,19 @@ function addToSRTFile(processedChanges: Change[], i: number, exportInSrt: boolea
 				language: processedChanges[i - 1].language,
 			})
 		),
-		'srt'
+		'srt',
+		true
 	)
 }
 
+/**
+ * Returns the new text content based on the change type and the previous change.
+ * @param type - The type of the change.
+ * @param text - The text of the change.
+ * @param previousChange - The previous change.
+ * @param rangeOffset - The offset of the range.
+ * @param rangeLength - The length of the range.
+ */
 function getNewTextContent(
 	type: string,
 	text: string,
@@ -299,6 +305,9 @@ async function processCSVLine(line: string, previousChange: Change | null): Prom
 
 	const newText = getNewTextContent(type, text, previousChange, rangeOffset, rangeLength)
 
+	/**
+	 * Skip exporting changes with the same values to the previous change.
+	 */
 	if (
 		previousChange &&
 		time === previousChange.startTime &&
@@ -319,6 +328,13 @@ async function processCSVLine(line: string, previousChange: Change | null): Prom
 	}
 }
 
+/**
+ * Returns the updated text content based on the previous text, range offset, range length, and new text.
+ * @param previousText - The previous text.
+ * @param rangeOffset - The offset of the range.
+ * @param rangeLength - The length of the range.
+ * @param newText - The new text.
+ */
 function getUpdatedText(
 	previousText: string,
 	rangeOffset: number,
@@ -350,7 +366,16 @@ async function processCsvFile(): Promise<void> {
 		return
 	}
 
-	const filePath = path.join(exportPath, `${recording.fileName}.csv`)
+	if (!recording.startDateTime) {
+		return
+	}
+
+	const sourceFileName = generateFileName(recording.startDateTime)
+	if (!sourceFileName) {
+		return
+	}
+
+	const filePath = path.join(exportPath, `${sourceFileName}.csv`)
 	const processedChanges: Change[] = []
 
 	const rl = readline.createInterface({
@@ -404,7 +429,7 @@ function finalizeRecording(processedChanges: Change[], exportFormats: string[]):
 	}
 
 	if (exportFormats.includes('JSON')) {
-		addToFileQueue(JSON.stringify(processedChanges), 'json')
+		addToFileQueue(JSON.stringify(processedChanges), 'json', true)
 	}
 	appendToFile()
 }
@@ -426,12 +451,23 @@ function addSrtLine(sequence: number, start: number, end: number, text: string):
  * @param content - The content to add.
  * @param fileExtension - The file extension (optional, defaults to 'csv').
  */
-export function addToFileQueue(content: string | undefined, fileExtension = 'csv'): void {
+export function addToFileQueue(
+	content: string | undefined,
+	fileExtension = 'csv',
+	isExport = false
+): void {
 	if (!content) {
 		return
 	}
+	if (!recording.startDateTime) {
+		return
+	}
+	const fileName = generateFileName(recording.startDateTime, isExport)
+	if (!fileName) {
+		return
+	}
 	fileQueue.push({
-		name: `${recording.fileName}.${fileExtension}`,
+		name: `${fileName}.${fileExtension}`,
 		content: content,
 	})
 }

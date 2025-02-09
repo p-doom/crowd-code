@@ -30,6 +30,5 @@ export interface Recording {
 	timer: number
 	startDateTime: Date | null
 	endDateTime: Date | null
-	fileName: string
 	sequence: number
 }
