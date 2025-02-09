@@ -129,7 +129,9 @@ export function setDefaultOptions() {
 	const config = getConfig()
 	for (const [key, value] of Object.entries(defaultConfiguration)) {
 		const configKey = key.replace('vsCodeRecorder.', '')
-		config.update(configKey, value.default, vscode.ConfigurationTarget.Workspace)
+		if ('default' in value) {
+			config.update(configKey, value.default, vscode.ConfigurationTarget.Workspace)
+		}
 	}
 }
 

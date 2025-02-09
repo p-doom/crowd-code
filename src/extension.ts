@@ -44,7 +44,7 @@ export function activate(context: vscode.ExtensionContext): void {
 		vscode.commands.registerCommand(commands.openSettings, () => {
 			vscode.commands.executeCommand(
 				'workbench.action.openSettings',
-				'@ext:mattiaconsiglio.vs-code-recorder'
+				'@ext:MattiaConsiglio.vs-code-recorder'
 			)
 		})
 	)

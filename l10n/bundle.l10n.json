@@ -19,5 +19,17 @@
   "Stop Recording": "Stop Recording",
   "Start Recording": "Start Recording",
   "Activating VS Code Recorder": "Activating VS Code Recorder",
-  "Deactivating VS Code Recorder": "Deactivating VS Code Recorder"
+  "Deactivating VS Code Recorder": "Deactivating VS Code Recorder",
+  "displayName": "VS Code Recorder",
+  "description": "Record your code editing activity in VS Code",
+  "command.startRecording.title": "Start Recording",
+  "command.stopRecording.title": "Stop Recording",
+  "command.openSettings.title": "Open Settings",
+  "config.title": "VS Code Recorder Configuration",
+  "config.exportPath.description": "Path where the recordings will be exported. Use '${workspaceFolder}' to refer to the workspace folder.",
+  "config.createPathOutsideWorkspace.description": "Whether to create the export path if it does not exist, even if it is outside the workspace.",
+  "config.exportFormats.description": "Formats to export the recording in.",
+  "config.minimalMode.description": "Whether to show only the icon in the status bar when recording is stopped.",
+  "config.showTimer.description": "Whether to show the timer in the status bar when recording.",
+  "view.title": "VS Code Recorder"
 }

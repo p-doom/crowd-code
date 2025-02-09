@@ -19,6 +19,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Security
 
+## 1.1.0
+
+### Added
+
+- Language locale support. Now available in English and Italian. (Fell free to contribute to add more languages!)
+- Added recording side panel to show the recording progress and manage the recordings.
+
+### Fixed
+
+- Skip exporting changes with the same values to the previous change.
+- Offset by 1 ms the `startTime` and `endTime` to avoid the overlap of the changes.
+
+### Changed
+
+- Added automated tests.
+- Refactored code.
+
 ## 1.0.11
 
 ### Changed

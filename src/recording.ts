@@ -21,7 +21,7 @@ import { type File, ChangeType, type CSVRowBuilder, type Change, type Recording 
 import { extContext, statusBarItem } from './extension'
 
 export const commands = {
-	openSettings: 'workbench.action.openSettings',
+	openSettings: 'vs-code-recorder.openSettings',
 	startRecording: 'vs-code-recorder.startRecording',
 	stopRecording: 'vs-code-recorder.stopRecording',
 }
@@ -263,33 +263,82 @@ function addToSRTFile(processedChanges: Change[], i: number, exportInSrt: boolea
 	)
 }
 
+function getNewTextContent(
+	type: string,
+	text: string,
+	previousChange: Change | null,
+	rangeOffset: number,
+	rangeLength: number
+): string {
+	if (type === ChangeType.TAB) {
+		return text
+	}
+	if (!previousChange) {
+		return ''
+	}
+	return getUpdatedText(previousChange.text, rangeOffset, rangeLength, text)
+}
+
+/**
+ * Processes a single CSV line and returns the processed change
+ */
+async function processCSVLine(line: string, previousChange: Change | null): Promise<Change | null> {
+	const lineArr = line.split(/,(?=(?:[^"]*"[^"]*")*[^"]*$)/)
+
+	if (Number.isNaN(Number.parseInt(lineArr[0]))) {
+		return null
+	}
+
+	const time = Number.parseInt(lineArr[1])
+	const file = removeDoubleQuotes(lineArr[2])
+	const rangeOffset = Number.parseInt(lineArr[3])
+	const rangeLength = Number.parseInt(lineArr[4])
+	const text = unescapeString(removeDoubleQuotes(lineArr[5]))
+	const language = lineArr[6]
+	const type = lineArr[7]
+
+	const newText = getNewTextContent(type, text, previousChange, rangeOffset, rangeLength)
+
+	if (
+		previousChange &&
+		time === previousChange.startTime &&
+		file === previousChange.file &&
+		newText === previousChange.text &&
+		language === previousChange.language
+	) {
+		return null
+	}
+
+	return {
+		sequence: previousChange ? previousChange.sequence + 1 : 1,
+		file,
+		startTime: time,
+		endTime: 0,
+		language,
+		text: newText,
+	}
+}
+
+function getUpdatedText(
+	previousText: string,
+	rangeOffset: number,
+	rangeLength: number,
+	newText: string
+): string {
+	const textArray = previousText.split('')
+	textArray.splice(rangeOffset, rangeLength, newText)
+	return textArray.join('')
+}
+
 /**
  * Processes the CSV file and generates the necessary output files.
  */
 async function processCsvFile(): Promise<void> {
-	const workspaceFolders = vscode.workspace.workspaceFolders
-	if (!workspaceFolders) {
-		logToOutput(
-			vscode.l10n.t(
-				'No workspace folder found. To process the recording is needed a workspace folder'
-			),
-			'error'
-		)
-		return
-	}
-	if (!recording.endDateTime) {
-		logToOutput(vscode.l10n.t('Recording end date time is not set'), 'error')
-		return
-	}
-	if (!recording.startDateTime) {
-		logToOutput(vscode.l10n.t('Recording start date time is not set'), 'error')
+	if (!validateRecordingState()) {
 		return
 	}
 
 	const exportFormats = getConfig().get<string[]>('export.exportFormats', [])
-	const exportInSrt = exportFormats.includes('SRT')
-	const exportInJson = exportFormats.includes('JSON')
-
 	if (exportFormats.length === 0) {
 		logToOutput(vscode.l10n.t('No export formats specified'), 'info')
 		vscode.window.showWarningMessage(vscode.l10n.t('No export formats specified'))
@@ -300,54 +349,64 @@ async function processCsvFile(): Promise<void> {
 	if (!exportPath) {
 		return
 	}
+
 	const filePath = path.join(exportPath, `${recording.fileName}.csv`)
-	const fileStream = fs.createReadStream(filePath)
+	const processedChanges: Change[] = []
+
 	const rl = readline.createInterface({
-		input: fileStream,
+		input: fs.createReadStream(filePath),
 		crlfDelay: Number.POSITIVE_INFINITY,
 	})
-	let i = 0
-	const processedChanges: Change[] = []
+
 	for await (const line of rl) {
-		const lineArr = line.split(/,(?=(?:[^"]*"[^"]*")*[^"]*$)/)
+		const previousChange = processedChanges[processedChanges.length - 1]
+		const change = await processCSVLine(line, previousChange)
 
-		const sequence = Number.parseInt(lineArr[0])
-		if (Number.isNaN(sequence)) {
-			continue
+		if (change) {
+			if (previousChange) {
+				previousChange.endTime = change.startTime
+				if (exportFormats.includes('SRT')) {
+					addToSRTFile(processedChanges, processedChanges.length, true)
+				}
+			}
+			processedChanges.push(change)
 		}
-		const time = Number.parseInt(lineArr[1])
-		const file = removeDoubleQuotes(lineArr[2])
-		const rangeOffset = Number.parseInt(lineArr[3])
-		const rangeLength = Number.parseInt(lineArr[4])
-		const text = unescapeString(removeDoubleQuotes(lineArr[5]))
-		const language = lineArr[6]
-		const type = lineArr[7]
-
-		let newText = ''
-		if (type === ChangeType.TAB) {
-			newText = text
-		} else {
-			const newTextSplit = processedChanges[i - 1].text.split('')
-			newTextSplit.splice(rangeOffset, rangeLength, text)
-			newText = newTextSplit.join('')
-		}
-		processedChanges.push({ sequence, file, startTime: time, endTime: 0, language, text: newText })
-		if (i > 0) {
-			processedChanges[i - 1].endTime = time
-			addToSRTFile(processedChanges, i, exportInSrt)
-		}
-		i++
 	}
 
-	processedChanges[i - 1].endTime =
-		recording.endDateTime.getTime() - recording.startDateTime.getTime()
-	addToSRTFile(processedChanges, i, exportInSrt)
+	finalizeRecording(processedChanges, exportFormats)
+	rl.close()
+}
 
-	if (exportInJson) {
+function validateRecordingState(): boolean {
+	if (!vscode.workspace.workspaceFolders) {
+		logToOutput(
+			vscode.l10n.t(
+				'No workspace folder found. To process the recording is needed a workspace folder'
+			),
+			'error'
+		)
+		return false
+	}
+	if (!recording.endDateTime || !recording.startDateTime) {
+		logToOutput(vscode.l10n.t('Recording date time is not properly set'), 'error')
+		return false
+	}
+	return true
+}
+
+function finalizeRecording(processedChanges: Change[], exportFormats: string[]): void {
+	const lastChange = processedChanges[processedChanges.length - 1]
+	if (lastChange && recording.endDateTime && recording.startDateTime) {
+		lastChange.endTime = recording.endDateTime.getTime() - recording.startDateTime.getTime()
+		if (exportFormats.includes('SRT')) {
+			addToSRTFile(processedChanges, processedChanges.length, true)
+		}
+	}
+
+	if (exportFormats.includes('JSON')) {
 		addToFileQueue(JSON.stringify(processedChanges), 'json')
 	}
 	appendToFile()
-	rl.close()
 }
 
 /**
