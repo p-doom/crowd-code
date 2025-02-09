@@ -18,7 +18,7 @@ import {
 	unescapeString,
 } from './utilities'
 import { type File, ChangeType, type CSVRowBuilder, type Change, type Recording } from './types'
-import { extContext, statusBarItem } from './extension'
+import { extContext, statusBarItem, actionsProvider } from './extension'
 
 export const commands = {
 	openSettings: 'vs-code-recorder.openSettings',
@@ -160,6 +160,8 @@ export async function startRecording(): Promise<void> {
 	appendToFile()
 	extContext.subscriptions.push(onChangeSubscription)
 	updateStatusBarItem()
+	actionsProvider.setRecordingState(true)
+	actionsProvider.setCurrentFile(vscode.window.activeTextEditor.document.fileName)
 }
 
 /**
@@ -179,6 +181,7 @@ export function stopRecording(force = false): void {
 		extContext.subscriptions.splice(index, 1)
 	}
 	updateStatusBarItem()
+	actionsProvider.setRecordingState(false)
 	if (force) {
 		notificationWithProgress(vscode.l10n.t('Recording cancelled'))
 		logToOutput(vscode.l10n.t('Recording cancelled'), 'info')

@@ -13,9 +13,11 @@ import {
 } from './recording'
 import { ChangeType } from './types'
 import { RecordFilesProvider } from './recordFilesProvider'
+import { ActionsProvider } from './actionsProvider'
 
 export let statusBarItem: vscode.StatusBarItem
 export let extContext: vscode.ExtensionContext
+export let actionsProvider: ActionsProvider
 
 function onConfigurationChange(event: vscode.ConfigurationChangeEvent) {
 	if (event.affectsConfiguration('vsCodeRecorder')) {
@@ -34,6 +36,10 @@ export function activate(context: vscode.ExtensionContext): void {
 	context.subscriptions.push(
 		vscode.window.registerTreeDataProvider('recordFiles', recordFilesProvider)
 	)
+
+	// Register Actions Provider
+	actionsProvider = new ActionsProvider()
+	context.subscriptions.push(vscode.window.registerTreeDataProvider('actions', actionsProvider))
 
 	// Register refresh command
 	context.subscriptions.push(
@@ -83,6 +89,7 @@ export function activate(context: vscode.ExtensionContext): void {
 				})
 			)
 			appendToFile()
+			actionsProvider.setCurrentFile(editor.document.fileName)
 		}
 	})
 

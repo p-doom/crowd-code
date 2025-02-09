@@ -34,5 +34,6 @@
   "view.recordFiles.name": "File di registrazione",
   "view.recordFiles.contextualTitle": "File di registrazione",
   "view.actions.name": "Azioni",
-  "view.actions.contextualTitle": "Azioni"
+  "view.actions.contextualTitle": "Azioni",
+  "Current File: {fileName}": "File corrente: {fileName}"
 }
