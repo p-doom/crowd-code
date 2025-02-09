@@ -12,6 +12,7 @@ import {
 	appendToFile,
 } from './recording'
 import { ChangeType } from './types'
+import { RecordFilesProvider } from './recordFilesProvider'
 
 export let statusBarItem: vscode.StatusBarItem
 export let extContext: vscode.ExtensionContext
@@ -27,6 +28,19 @@ export function activate(context: vscode.ExtensionContext): void {
 	extContext = context
 	outputChannel.show()
 	logToOutput(vscode.l10n.t('Activating VS Code Recorder'), 'info')
+
+	// Register Record Files Provider
+	const recordFilesProvider = new RecordFilesProvider()
+	context.subscriptions.push(
+		vscode.window.registerTreeDataProvider('recordFiles', recordFilesProvider)
+	)
+
+	// Register refresh command
+	context.subscriptions.push(
+		vscode.commands.registerCommand('vs-code-recorder.refreshRecordFiles', () => {
+			recordFilesProvider.refresh()
+		})
+	)
 
 	context.subscriptions.push(
 		vscode.commands.registerCommand(commands.startRecording, () => {

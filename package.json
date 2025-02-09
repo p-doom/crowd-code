@@ -21,15 +21,23 @@
     "commands": [
       {
         "command": "vs-code-recorder.startRecording",
-        "title": "%command.startRecording.title%"
+        "title": "%command.startRecording.title%",
+        "icon": "$(play)"
       },
       {
         "command": "vs-code-recorder.stopRecording",
-        "title": "%command.stopRecording.title%"
+        "title": "%command.stopRecording.title%",
+        "icon": "$(stop)"
       },
       {
         "command": "vs-code-recorder.openSettings",
-        "title": "%command.openSettings.title%"
+        "title": "%command.openSettings.title%",
+        "icon": "$(settings)"
+      },
+      {
+        "command": "vs-code-recorder.refreshRecordFiles",
+        "title": "%command.refreshRecordFiles.title%",
+        "icon": "$(refresh)"
       }
     ],
     "viewsContainers": {
@@ -44,10 +52,25 @@
     "views": {
       "vs-code-recorder": [
         {
+          "id": "actions",
+          "name": "%view.actions.name%",
+          "icon": "icon.svg",
+          "contextualTitle": "%view.actions.contextualTitle%"
+        },
+        {
           "id": "recordFiles",
           "name": "%view.recordFiles.name%",
           "icon": "icon.svg",
           "contextualTitle": "%view.recordFiles.contextualTitle%"
+        }
+      ]
+    },
+    "menus": {
+      "view/title": [
+        {
+          "command": "vs-code-recorder.refreshRecordFiles",
+          "when": "view == recordFiles",
+          "group": "navigation"
         }
       ]
     },

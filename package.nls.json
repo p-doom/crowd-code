@@ -4,10 +4,15 @@
 	"command.startRecording.title": "VS Code Recorder: Start Recording",
 	"command.stopRecording.title": "VS Code Recorder: Stop Recording",
 	"command.openSettings.title": "VS Code Recorder: Open Settings",
+	"command.refreshRecordFiles.title": "Refresh",
 	"config.title": "VS Code Recorder",
 	"config.exportPath.description": "Set the export path. Use `${workspaceFolder}` to export to the workspace folder. In case the path does not exist in the workspace, it will be created.",
 	"config.createPathOutsideWorkspace.description": "Create the export path outside the workspace",
 	"config.exportFormats.description": "Select the formats to export recording data",
 	"config.minimalMode.description": "Enable minimal mode. Display only icons and no text",
-	"config.showTimer.description": "Show timer. The timer will be displayed even in minimal mode"
+	"config.showTimer.description": "Show timer. The timer will be displayed even in minimal mode",
+	"view.recordFiles.name": "Recorded Files",
+	"view.recordFiles.contextualTitle": "Recorded Files",
+	"view.actions.name": "Actions",
+	"view.actions.contextualTitle": "Actions"
 }
