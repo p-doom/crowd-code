@@ -2,7 +2,7 @@
   "name": "vs-code-recorder",
   "displayName": "%displayName%",
   "description": "%description%",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "publisher": "MattiaConsiglio",
   "icon": "icon.png",
   "engines": {
