@@ -1,7 +1,7 @@
 import * as vscode from 'vscode'
 import * as fs from 'node:fs'
 import * as path from 'node:path'
-import { getExportPath } from './utilities'
+import { getExportPath, createPath } from './utilities'
 
 export class RecordFile extends vscode.TreeItem {
 	constructor(
@@ -53,6 +53,9 @@ export class RecordFilesProvider implements vscode.TreeDataProvider<RecordFile> 
 		}
 
 		try {
+			// Create the export path if it doesn't exist using the utility function
+			await createPath(exportPath)
+
 			// If no element is provided, show both folders and files in the root
 			if (!element) {
 				const items = fs.readdirSync(exportPath)

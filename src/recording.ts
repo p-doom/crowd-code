@@ -16,6 +16,7 @@ import {
 	getConfig,
 	removeDoubleQuotes,
 	unescapeString,
+	addToGitignore,
 } from './utilities'
 import { type File, ChangeType, type CSVRowBuilder, type Change, type Recording } from './types'
 import { extContext, statusBarItem, actionsProvider } from './extension'
@@ -136,6 +137,14 @@ export async function startRecording(): Promise<void> {
 	const exportPath = getExportPath()
 	if (!exportPath) {
 		return
+	}
+
+	// If the setting is enabled and the path is inside the workspace, add it to .gitignore
+	if (
+		getConfig().get<boolean>('export.addToGitignore') &&
+		getConfig().get<string>('export.exportPath')?.startsWith('${workspaceFolder}')
+	) {
+		await addToGitignore()
 	}
 
 	recording.startDateTime = new Date()

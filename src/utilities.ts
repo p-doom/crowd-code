@@ -27,15 +27,16 @@ export function getConfig() {
  * @returns Void.
  */
 export async function createPath(path: string) {
+	// If the setting is enabled and the path is inside the workspace, add it to .gitignore
+	if (
+		getConfig().get<boolean>('export.addToGitignore') &&
+		getConfig().get<string>('export.exportPath')?.startsWith('${workspaceFolder}')
+	) {
+		await addToGitignore()
+	}
+
 	if (!fs.existsSync(path)) {
 		fs.mkdirSync(path)
-		// If the setting is enabled and the path is inside the workspace, add it to .gitignore
-		if (
-			getConfig().get<boolean>('export.addToGitignore') &&
-			getConfig().get<string>('export.exportPath')?.startsWith('${workspaceFolder}')
-		) {
-			await addToGitignore()
-		}
 	}
 }
 
