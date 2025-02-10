@@ -25,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Language locale support. Now available in English and Italian. (Fell free to contribute to add more languages!)
 - Added recording side panel to show the recording progress and manage the recordings.
+- Added option to set custom folder names for recordings with timestamp appended.
 
 ### Fixed
 

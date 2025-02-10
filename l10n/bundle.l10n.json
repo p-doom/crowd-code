@@ -24,5 +24,8 @@
   "command.revealInExplorer.title": "Reveal in File Explorer",
   "Are you sure you want to delete {name}?": "Are you sure you want to delete {name}?",
   "Yes": "Yes",
-  "No": "No"
+  "No": "No",
+  "config.askFolderName.description": "Ask for a custom folder name before starting a recording",
+  "Enter recording folder name": "Enter recording folder name",
+  "Enter a name for the recording folder": "Enter a name for the recording folder"
 }

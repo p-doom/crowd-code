@@ -31,4 +31,5 @@ export interface Recording {
 	startDateTime: Date | null
 	endDateTime: Date | null
 	sequence: number
+	customFolderName?: string
 }

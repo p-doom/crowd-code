@@ -153,9 +153,14 @@ export function logToOutput(message: string, type: 'info' | 'success' | 'error' 
  * Generates a file name based on the current date and time.
  * @param date - The date to use for generating the file name.
  * @param isExport - Whether the file is being exported.
+ * @param customName - Optional custom name for the folder.
  * @returns The generated file name.
  */
-export function generateFileName(date: Date | null, isExport = false): string | undefined {
+export function generateFileName(
+	date: Date | null,
+	isExport = false,
+	customName?: string
+): string | undefined {
 	if (!date) {
 		return
 	}
@@ -167,7 +172,8 @@ export function generateFileName(date: Date | null, isExport = false): string | 
 	const seconds = date.getSeconds().toString().padStart(2, '0')
 	const milliseconds = date.getMilliseconds().toString().padStart(2, '0')
 
-	const folderName = `vs-code-recorder-${year}_${month}_${day}-${hours}.${minutes}.${seconds}.${milliseconds}`
+	const timestamp = `${year}_${month}_${day}-${hours}.${minutes}.${seconds}.${milliseconds}`
+	const folderName = customName ? `${customName}-${timestamp}` : `vs-code-recorder-${timestamp}`
 	const fileName = isExport ? 'recording' : 'source'
 
 	return `${folderName}/${fileName}`

@@ -32,6 +32,7 @@ export const recording: Recording = {
 	startDateTime: null,
 	endDateTime: null,
 	sequence: 0,
+	customFolderName: '',
 }
 
 let intervalId: NodeJS.Timeout
@@ -138,15 +139,30 @@ export async function startRecording(): Promise<void> {
 	}
 
 	recording.startDateTime = new Date()
-	const folderName = generateFileName(recording.startDateTime)
+
+	// Ask for folder name if enabled in settings
+	let customFolderName: string | undefined
+	if (getConfig().get('recording.askFolderName')) {
+		customFolderName = await vscode.window.showInputBox({
+			prompt: vscode.l10n.t('Enter a name for the recording folder'),
+			placeHolder: vscode.l10n.t('Enter recording folder name'),
+		})
+		if (!customFolderName) {
+			stopRecording(true)
+			return
+		}
+		recording.customFolderName = customFolderName
+	}
+
+	const folderName = generateFileName(recording.startDateTime, false, recording.customFolderName)
 	if (!folderName) {
 		stopRecording(true)
 		return
 	}
 
 	// Create the recording folder
-	const recordingPath = path.join(exportPath, folderName)
-	createRecordingFolder(recordingPath)
+	const folderPath = path.dirname(path.join(exportPath, folderName))
+	createRecordingFolder(folderPath)
 
 	recording.isRecording = true
 	recording.timer = 0
@@ -199,12 +215,16 @@ export function stopRecording(force = false): void {
 	if (force) {
 		notificationWithProgress(vscode.l10n.t('Recording cancelled'))
 		logToOutput(vscode.l10n.t('Recording cancelled'), 'info')
+		recording.customFolderName = undefined
 		return
 	}
 	notificationWithProgress(vscode.l10n.t('Recording finished'))
 	logToOutput(vscode.l10n.t('Recording finished'), 'info')
 	recording.endDateTime = new Date()
-	processCsvFile()
+	processCsvFile().then(() => {
+		// Reset customFolderName after processing is complete
+		recording.customFolderName = undefined
+	})
 }
 
 /**
@@ -238,6 +258,11 @@ export async function appendToFile(): Promise<void> {
  */
 async function addToFile(filePath: string, text: string): Promise<void> {
 	try {
+		// Ensure the directory exists
+		const directory = path.dirname(filePath)
+		if (!fs.existsSync(directory)) {
+			fs.mkdirSync(directory, { recursive: true })
+		}
 		await appendFileUtil(filePath, text)
 		fileQueue.shift()
 	} catch (err) {
@@ -387,36 +412,50 @@ async function processCsvFile(): Promise<void> {
 		return
 	}
 
-	const sourceFileName = generateFileName(recording.startDateTime)
+	// Use the same custom folder name for reading the source file
+	const sourceFileName = generateFileName(
+		recording.startDateTime,
+		false,
+		recording.customFolderName
+	)
 	if (!sourceFileName) {
 		return
 	}
 
 	const filePath = path.join(exportPath, `${sourceFileName}.csv`)
-	const processedChanges: Change[] = []
 
-	const rl = readline.createInterface({
-		input: fs.createReadStream(filePath),
-		crlfDelay: Number.POSITIVE_INFINITY,
-	})
-
-	for await (const line of rl) {
-		const previousChange = processedChanges[processedChanges.length - 1]
-		const change = await processCSVLine(line, previousChange)
-
-		if (change) {
-			if (previousChange) {
-				previousChange.endTime = change.startTime
-				if (exportFormats.includes('SRT')) {
-					addToSRTFile(processedChanges, processedChanges.length, true)
-				}
-			}
-			processedChanges.push(change)
+	try {
+		if (!fs.existsSync(filePath)) {
+			throw new Error(`Source file not found: ${filePath}`)
 		}
-	}
 
-	finalizeRecording(processedChanges, exportFormats)
-	rl.close()
+		const processedChanges: Change[] = []
+
+		const rl = readline.createInterface({
+			input: fs.createReadStream(filePath),
+			crlfDelay: Number.POSITIVE_INFINITY,
+		})
+
+		for await (const line of rl) {
+			const previousChange = processedChanges[processedChanges.length - 1]
+			const change = await processCSVLine(line, previousChange)
+
+			if (change) {
+				if (previousChange) {
+					previousChange.endTime = change.startTime
+					if (exportFormats.includes('SRT')) {
+						addToSRTFile(processedChanges, processedChanges.length, true)
+					}
+				}
+				processedChanges.push(change)
+			}
+		}
+
+		finalizeRecording(processedChanges, exportFormats)
+		rl.close()
+	} catch (err) {
+		vscode.window.showErrorMessage(`Error processing recording: ${err}`)
+	}
 }
 
 function validateRecordingState(): boolean {
@@ -482,7 +521,8 @@ export function addToFileQueue(
 	if (!recording.startDateTime) {
 		return
 	}
-	const fileName = generateFileName(recording.startDateTime, isExport)
+	// Use the same custom name throughout the recording session
+	const fileName = generateFileName(recording.startDateTime, isExport, recording.customFolderName)
 	if (!fileName) {
 		return
 	}

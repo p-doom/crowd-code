@@ -138,17 +138,23 @@
           "description": "%config.exportFormats.description%",
           "order": 2
         },
+        "vsCodeRecorder.recording.askFolderName": {
+          "type": "boolean",
+          "default": false,
+          "description": "%config.askFolderName.description%",
+          "order": 3
+        },
         "vsCodeRecorder.appearance.minimalMode": {
           "type": "boolean",
           "default": false,
           "description": "%config.minimalMode.description%",
-          "order": 3
+          "order": 4
         },
         "vsCodeRecorder.appearance.showTimer": {
           "type": "boolean",
           "default": true,
           "description": "%config.showTimer.description%",
-          "order": 4
+          "order": 5
         }
       }
     }
