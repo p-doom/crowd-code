@@ -1,4 +1,6 @@
 import * as vscode from 'vscode'
+import * as fs from 'node:fs'
+import * as path from 'node:path'
 import { commands } from './recording'
 import { getConfig } from './utilities'
 
@@ -25,6 +27,7 @@ export class ActionsProvider implements vscode.TreeDataProvider<ActionItem> {
 	private _timer = 0
 	private _isRecording = false
 	private _currentFile = ''
+	private _gitignoreWatcher: vscode.FileSystemWatcher | undefined
 
 	constructor() {
 		// Update timer every second when recording
@@ -34,6 +37,23 @@ export class ActionsProvider implements vscode.TreeDataProvider<ActionItem> {
 				this.refresh()
 			}
 		}, 1000)
+
+		// Watch for .gitignore changes
+		this.setupGitignoreWatcher()
+	}
+
+	private setupGitignoreWatcher() {
+		const workspaceFolder = vscode.workspace.workspaceFolders?.[0]
+		if (workspaceFolder) {
+			this._gitignoreWatcher?.dispose()
+			this._gitignoreWatcher = vscode.workspace.createFileSystemWatcher(
+				new vscode.RelativePattern(workspaceFolder, '.gitignore')
+			)
+
+			this._gitignoreWatcher.onDidCreate(() => this.refresh())
+			this._gitignoreWatcher.onDidChange(() => this.refresh())
+			this._gitignoreWatcher.onDidDelete(() => this.refresh())
+		}
 	}
 
 	refresh(): void {
@@ -65,6 +85,37 @@ export class ActionsProvider implements vscode.TreeDataProvider<ActionItem> {
 		return `${hours.toString().padStart(2, '0')}:${minutes
 			.toString()
 			.padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`
+	}
+
+	private shouldShowGitignoreButton(): boolean {
+		const workspaceFolder = vscode.workspace.workspaceFolders?.[0]
+		if (!workspaceFolder) {
+			return false
+		}
+
+		const gitignorePath = path.join(workspaceFolder.uri.fsPath, '.gitignore')
+		const exportPath = getConfig().get<string>('export.exportPath')
+
+		if (!exportPath) {
+			return false
+		}
+
+		// If .gitignore doesn't exist, show the button
+		if (!fs.existsSync(gitignorePath)) {
+			return false
+		}
+
+		// Get the relative path from workspace folder
+		let relativePath = exportPath
+		if (exportPath.startsWith('${workspaceFolder}')) {
+			relativePath = exportPath.replace('${workspaceFolder}', '').replace(/\\/g, '/')
+		}
+		// Remove leading and trailing slashes
+		relativePath = relativePath.replace(/^\/+|\/+$/g, '')
+
+		// Check if the path is already in .gitignore
+		const content = fs.readFileSync(gitignorePath, 'utf8')
+		return !content.split('\n').some(line => line.trim() === relativePath)
 	}
 
 	async getChildren(element?: ActionItem): Promise<ActionItem[]> {
@@ -100,17 +151,32 @@ export class ActionsProvider implements vscode.TreeDataProvider<ActionItem> {
 		// Current file (only when recording)
 		if (this._isRecording && this._currentFile) {
 			const currentFile = new ActionItem(
-				`${vscode.l10n.t('Current File: {fileName}', {
-					fileName: vscode.workspace.asRelativePath(this._currentFile),
-				})}`,
+				`Current File: ${vscode.workspace.asRelativePath(this._currentFile)}`,
 				vscode.TreeItemCollapsibleState.None,
 				undefined,
 				'file'
 			)
-
 			items.push(currentFile)
 		}
 
+		// Add to .gitignore action (only if .gitignore exists and path is not already in it)
+		if (this.shouldShowGitignoreButton()) {
+			const addToGitignoreButton = new ActionItem(
+				'Add to .gitignore',
+				vscode.TreeItemCollapsibleState.None,
+				{
+					command: 'vs-code-recorder.addToGitignore',
+					title: 'Add to .gitignore',
+				},
+				'git-ignore'
+			)
+			items.push(addToGitignoreButton)
+		}
+
 		return items
+	}
+
+	dispose() {
+		this._gitignoreWatcher?.dispose()
 	}
 }

@@ -26,9 +26,16 @@ export function getConfig() {
  * @param path - The path of the directory to create.
  * @returns Void.
  */
-export function createPath(path: string) {
+export async function createPath(path: string) {
 	if (!fs.existsSync(path)) {
 		fs.mkdirSync(path)
+		// If the setting is enabled and the path is inside the workspace, add it to .gitignore
+		if (
+			getConfig().get<boolean>('export.addToGitignore') &&
+			getConfig().get<string>('export.exportPath')?.startsWith('${workspaceFolder}')
+		) {
+			await addToGitignore()
+		}
 	}
 }
 
@@ -310,4 +317,56 @@ export function unescapeString(text: string): string {
 		.replace(/\\n/g, '\n')
 		.replace(/\\r/g, '\r')
 		.replace(/\\t/g, '\t')
+}
+
+/**
+ * Adds the export path to .gitignore if it doesn't exist.
+ * @returns true if the path was added, false if it already exists or if there was an error
+ */
+export async function addToGitignore(): Promise<boolean> {
+	const workspaceFolder = vscode.workspace.workspaceFolders?.[0]
+	if (!workspaceFolder) {
+		vscode.window.showErrorMessage(vscode.l10n.t('error.noWorkspace'))
+		return false
+	}
+
+	const gitignorePath = path.join(workspaceFolder.uri.fsPath, '.gitignore')
+	const exportPath = getConfig().get<string>('export.exportPath')
+
+	if (!exportPath) {
+		vscode.window.showErrorMessage(vscode.l10n.t('error.noExportPath'))
+		return false
+	}
+
+	// Get the relative path from workspace folder
+	let relativePath = exportPath
+	if (exportPath.startsWith('${workspaceFolder}')) {
+		relativePath = exportPath.replace('${workspaceFolder}', '').replace(/\\/g, '/')
+	}
+	// Remove leading and trailing slashes
+	relativePath = relativePath.replace(/^\/+|\/+$/g, '')
+
+	try {
+		let content = ''
+		if (fs.existsSync(gitignorePath)) {
+			content = fs.readFileSync(gitignorePath, 'utf8')
+			// Check if the path is already in .gitignore
+			if (content.split('\n').some(line => line.trim() === relativePath)) {
+				vscode.window.showInformationMessage(vscode.l10n.t('Export path already in .gitignore'))
+				return false
+			}
+			// Add a newline if the file doesn't end with one
+			if (!content.endsWith('\n')) {
+				content += '\n'
+			}
+		}
+		content = `${content}${relativePath}\n`
+		fs.writeFileSync(gitignorePath, content)
+		vscode.window.showInformationMessage(vscode.l10n.t('Export path added to .gitignore'))
+		return true
+	} catch (err) {
+		console.error('Error updating .gitignore:', err)
+		vscode.window.showErrorMessage(vscode.l10n.t('Error updating .gitignore'))
+		return false
+	}
 }

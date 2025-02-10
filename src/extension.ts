@@ -1,5 +1,5 @@
 import * as vscode from 'vscode'
-import { getExportPath, logToOutput, outputChannel } from './utilities'
+import { getExportPath, logToOutput, outputChannel, addToGitignore } from './utilities'
 import {
 	updateStatusBarItem,
 	startRecording,
@@ -146,6 +146,12 @@ export function activate(context: vscode.ExtensionContext): void {
 				'workbench.action.openSettings',
 				'@ext:MattiaConsiglio.vs-code-recorder'
 			)
+		})
+	)
+
+	context.subscriptions.push(
+		vscode.commands.registerCommand('vs-code-recorder.addToGitignore', async () => {
+			await addToGitignore()
 		})
 	)
 

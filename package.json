@@ -48,6 +48,11 @@
         "command": "vs-code-recorder.revealInExplorer",
         "title": "%command.revealInExplorer.title%",
         "icon": "$(folder-opened)"
+      },
+      {
+        "command": "vs-code-recorder.addToGitignore",
+        "title": "%command.addToGitignore.title%",
+        "icon": "$(git-ignore)"
       }
     ],
     "viewsContainers": {
@@ -80,6 +85,11 @@
         {
           "command": "vs-code-recorder.refreshRecordFiles",
           "when": "view == recordFiles",
+          "group": "navigation"
+        },
+        {
+          "command": "vs-code-recorder.addToGitignore",
+          "when": "view == actions",
           "group": "navigation"
         }
       ],
@@ -121,6 +131,12 @@
           "description": "%config.createPathOutsideWorkspace.description%",
           "order": 1
         },
+        "vsCodeRecorder.export.addToGitignore": {
+          "type": "boolean",
+          "default": false,
+          "description": "%config.addToGitignore.description%",
+          "order": 2
+        },
         "vsCodeRecorder.export.exportFormats": {
           "type": "array",
           "items": {
@@ -136,25 +152,25 @@
             "SRT"
           ],
           "description": "%config.exportFormats.description%",
-          "order": 2
+          "order": 3
         },
         "vsCodeRecorder.recording.askFolderName": {
           "type": "boolean",
           "default": false,
           "description": "%config.askFolderName.description%",
-          "order": 3
+          "order": 4
         },
         "vsCodeRecorder.appearance.minimalMode": {
           "type": "boolean",
           "default": false,
           "description": "%config.minimalMode.description%",
-          "order": 4
+          "order": 5
         },
         "vsCodeRecorder.appearance.showTimer": {
           "type": "boolean",
           "default": true,
           "description": "%config.showTimer.description%",
-          "order": 5
+          "order": 6
         }
       }
     }

@@ -27,5 +27,8 @@
   "No": "No",
   "config.askFolderName.description": "Ask for a custom folder name before starting a recording",
   "Enter recording folder name": "Enter recording folder name",
-  "Enter a name for the recording folder": "Enter a name for the recording folder"
+  "Enter a name for the recording folder": "Enter a name for the recording folder",
+  "Add to .gitignore": "Add to .gitignore",
+  "Export path already in .gitignore": "Export path already in .gitignore",
+  "Error updating .gitignore": "Error updating .gitignore"
 }

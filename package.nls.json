@@ -5,9 +5,11 @@
 	"command.stopRecording.title": "VS Code Recorder: Stop Recording",
 	"command.openSettings.title": "VS Code Recorder: Open Settings",
 	"command.refreshRecordFiles.title": "Refresh",
+	"command.addToGitignore.title": "Add to .gitignore",
 	"config.title": "VS Code Recorder",
 	"config.exportPath.description": "Set the export path. Use `${workspaceFolder}` to export to the workspace folder. In case the path does not exist in the workspace, it will be created.",
 	"config.createPathOutsideWorkspace.description": "Create the export path outside the workspace",
+	"config.addToGitignore.description": "Add the export path to .gitignore when creating the folder",
 	"config.exportFormats.description": "Select the formats to export recording data",
 	"config.minimalMode.description": "Enable minimal mode. Display only icons and no text",
 	"config.showTimer.description": "Show timer. The timer will be displayed even in minimal mode",
@@ -22,5 +24,7 @@
 	"dialog.yes": "Yes",
 	"dialog.no": "No",
 	"dialog.enterFolderName.prompt": "Enter a name for the recording folder",
-	"dialog.enterFolderName.placeholder": "Enter recording folder name"
+	"dialog.enterFolderName.placeholder": "Enter recording folder name",
+	"error.noWorkspace": "No workspace folder found",
+	"error.noExportPath": "No export path specified"
 }
