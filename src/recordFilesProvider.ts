@@ -8,7 +8,8 @@ export class RecordFile extends vscode.TreeItem {
 		public readonly label: string,
 		public readonly collapsibleState: vscode.TreeItemCollapsibleState,
 		public readonly command?: vscode.Command,
-		public readonly isFolder: boolean = false
+		public readonly isFolder: boolean = false,
+		public readonly parentPath?: string
 	) {
 		super(label, collapsibleState)
 
@@ -86,11 +87,17 @@ export class RecordFilesProvider implements vscode.TreeDataProvider<RecordFile> 
 				.filter(file => file.endsWith('.json') || file.endsWith('.srt') || file.endsWith('.csv'))
 				.map(
 					file =>
-						new RecordFile(file, vscode.TreeItemCollapsibleState.None, {
-							command: 'vscode.open',
-							title: 'Open File',
-							arguments: [vscode.Uri.file(path.join(folderPath, file))],
-						})
+						new RecordFile(
+							file,
+							vscode.TreeItemCollapsibleState.None,
+							{
+								command: 'vscode.open',
+								title: 'Open File',
+								arguments: [vscode.Uri.file(path.join(folderPath, file))],
+							},
+							false,
+							element.label
+						)
 				)
 			return files
 		} catch (err) {

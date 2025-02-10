@@ -30,6 +30,21 @@ function onConfigurationChange(event: vscode.ConfigurationChangeEvent) {
 }
 
 /**
+ * Gets the full path for a file or folder
+ * @param item - The tree item representing the file or folder
+ * @param exportPath - The base export path
+ * @returns The full path to the file or folder
+ */
+function getFullPath(item: RecordFile, exportPath: string): string {
+	// If the item has a parent path (file inside a folder), construct the full path
+	if (item.parentPath) {
+		return path.join(exportPath, item.parentPath, item.label)
+	}
+	// Otherwise, it's a root item
+	return path.join(exportPath, item.label)
+}
+
+/**
  * Deletes a file or folder recursively
  * @param filePath - The path to the file or folder to delete
  */
@@ -89,7 +104,7 @@ export function activate(context: vscode.ExtensionContext): void {
 
 				if (result === vscode.l10n.t('Yes')) {
 					try {
-						const itemPath = path.join(exportPath, item.label)
+						const itemPath = getFullPath(item, exportPath)
 						await deleteFileOrFolder(itemPath)
 						recordFilesProvider.refresh()
 					} catch (err) {
@@ -108,7 +123,7 @@ export function activate(context: vscode.ExtensionContext): void {
 				return
 			}
 
-			const itemPath = path.join(exportPath, item.label)
+			const itemPath = getFullPath(item, exportPath)
 			vscode.commands.executeCommand('revealFileInOS', vscode.Uri.file(itemPath))
 		})
 	)

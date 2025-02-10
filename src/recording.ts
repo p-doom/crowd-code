@@ -448,7 +448,10 @@ function finalizeRecording(processedChanges: Change[], exportFormats: string[]):
 	if (exportFormats.includes('JSON')) {
 		addToFileQueue(JSON.stringify(processedChanges), 'json', true)
 	}
-	appendToFile()
+	appendToFile().then(() => {
+		// Refresh the recordFiles view after export is complete
+		vscode.commands.executeCommand('vs-code-recorder.refreshRecordFiles')
+	})
 }
 
 /**

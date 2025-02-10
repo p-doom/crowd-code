@@ -168,11 +168,9 @@ export function generateFileName(date: Date | null, isExport = false): string | 
 	const milliseconds = date.getMilliseconds().toString().padStart(2, '0')
 
 	const folderName = `vs-code-recorder-${year}_${month}_${day}-${hours}.${minutes}.${seconds}.${milliseconds}`
+	const fileName = isExport ? 'recording' : 'source'
 
-	if (isExport) {
-		return `${folderName}/recording`
-	}
-	return folderName
+	return `${folderName}/${fileName}`
 }
 
 /**
