@@ -20,11 +20,25 @@ This extension provides functionality to record changes made in the active text 
 
 ![VS Code Recorder Extension](https://raw.githubusercontent.com/mattia-consiglio/vs-code-recorder/main/img/preview.gif)
 
-To use the extension, click on "Start recording" in the status bar (on the right) and begin working in your text editor. The extension will automatically start recording changes. When you're done, stop the recording and the extension will finalize the data and save it to a CSV (source), JSON and SRT files.
+You can control the recording in two ways:
 
-Choose the format in which you want to export the data (SRT or JSON or both).
+1. Using the status bar (on the right): Click on "Start recording" to begin and "Stop recording" to end.
+2. Using the VS Code Recorder sidebar: Click on the extension icon in the activity bar to open the sidebar, where you can:
+   - Start/Stop the recording
+   - View the recording timer
+   - See the current file being recorded
+   - Manage your recorded files
+   - Add the export path to .gitignore
 
-You can also use the command palette to start and stop the recording.
+The extension will automatically record changes in your text editor. When you stop the recording, it will finalize the data and save it to a CSV (source), JSON and SRT files.
+
+You can customize the recording experience with these features:
+
+- Choose the export formats (SRT or JSON or both)
+- Set custom names for recording folders
+- Automatically add the export path to .gitignore
+
+You can also use the command palette to access the extension's features.
 Available commands:
 
 - `vs-code-recorder.startRecording`: Start the recording
@@ -46,15 +60,23 @@ Then, this file is processed to generate output files in SRT and JSON formats, p
 
 - `vsCodeRecorder.export.exportPath`: Set the export path. Use `${workspaceFolder}` to export to the workspace folder. In case the path does not exist in the workspace, it will be created.
 
-  Default: `${workspaceFolder}/recording.csv`
+  Default: `${workspaceFolder}/vs-code-recorder/`
 
 - `vsCodeRecorder.export.createPathOutsideWorkspace`: Create the export path outside the workspace if it doesn't exist
+
+  Default: `false`
+
+- `vsCodeRecorder.export.addToGitignore`: Add the export path to .gitignore when creating the folder
 
   Default: `false`
 
 - `vsCodeRecorder.export.exportFormats`: Enabled export formats (SRT or JSON or both)
 
   Default: `["JSON", "SRT"]`
+
+- `vsCodeRecorder.recording.askFolderName`: Ask for a custom folder name before starting a recording
+
+  Default: `false`
 
 - `vsCodeRecorder.appearance.minimalMode`: Enable or disable the minimal mode
 
