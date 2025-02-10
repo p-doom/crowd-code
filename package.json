@@ -38,6 +38,16 @@
         "command": "vs-code-recorder.refreshRecordFiles",
         "title": "%command.refreshRecordFiles.title%",
         "icon": "$(refresh)"
+      },
+      {
+        "command": "vs-code-recorder.deleteRecordFile",
+        "title": "%command.deleteRecordFile.title%",
+        "icon": "$(trash)"
+      },
+      {
+        "command": "vs-code-recorder.revealInExplorer",
+        "title": "%command.revealInExplorer.title%",
+        "icon": "$(folder-opened)"
       }
     ],
     "viewsContainers": {
@@ -71,6 +81,28 @@
           "command": "vs-code-recorder.refreshRecordFiles",
           "when": "view == recordFiles",
           "group": "navigation"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "vs-code-recorder.deleteRecordFile",
+          "when": "view == recordFiles",
+          "group": "inline"
+        },
+        {
+          "command": "vs-code-recorder.revealInExplorer",
+          "when": "view == recordFiles",
+          "group": "inline"
+        },
+        {
+          "command": "vs-code-recorder.deleteRecordFile",
+          "when": "view == recordFiles",
+          "group": "1_modification"
+        },
+        {
+          "command": "vs-code-recorder.revealInExplorer",
+          "when": "view == recordFiles",
+          "group": "2_workspace"
         }
       ]
     },

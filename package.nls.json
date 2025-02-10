@@ -14,5 +14,7 @@
 	"view.recordFiles.name": "Recorded Files",
 	"view.recordFiles.contextualTitle": "Recorded Files",
 	"view.actions.name": "Actions",
-	"view.actions.contextualTitle": "Actions"
+	"view.actions.contextualTitle": "Actions",
+	"command.deleteRecordFile.title": "Delete",
+	"command.revealInExplorer.title": "Reveal in File Explorer"
 }

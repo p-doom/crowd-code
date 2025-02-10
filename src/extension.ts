@@ -13,7 +13,10 @@ import {
 } from './recording'
 import { ChangeType } from './types'
 import { RecordFilesProvider } from './recordFilesProvider'
+import type { RecordFile } from './recordFilesProvider'
 import { ActionsProvider } from './actionsProvider'
+import * as fs from 'node:fs'
+import * as path from 'node:path'
 
 export let statusBarItem: vscode.StatusBarItem
 export let extContext: vscode.ExtensionContext
@@ -23,6 +26,26 @@ function onConfigurationChange(event: vscode.ConfigurationChangeEvent) {
 	if (event.affectsConfiguration('vsCodeRecorder')) {
 		updateStatusBarItem()
 		getExportPath()
+	}
+}
+
+/**
+ * Deletes a file or folder recursively
+ * @param filePath - The path to the file or folder to delete
+ */
+async function deleteFileOrFolder(filePath: string): Promise<void> {
+	try {
+		const stat = fs.statSync(filePath)
+		if (stat.isDirectory()) {
+			// Delete directory and its contents recursively
+			fs.rmSync(filePath, { recursive: true, force: true })
+		} else {
+			// Delete single file
+			fs.unlinkSync(filePath)
+		}
+	} catch (err) {
+		console.error('Error deleting file or folder:', err)
+		throw err
 	}
 }
 
@@ -45,6 +68,48 @@ export function activate(context: vscode.ExtensionContext): void {
 	context.subscriptions.push(
 		vscode.commands.registerCommand('vs-code-recorder.refreshRecordFiles', () => {
 			recordFilesProvider.refresh()
+		})
+	)
+
+	// Register delete command
+	context.subscriptions.push(
+		vscode.commands.registerCommand(
+			'vs-code-recorder.deleteRecordFile',
+			async (item: RecordFile) => {
+				const exportPath = getExportPath()
+				if (!exportPath) {
+					return
+				}
+
+				const result = await vscode.window.showWarningMessage(
+					vscode.l10n.t('Are you sure you want to delete {name}?', { name: item.label }),
+					vscode.l10n.t('Yes'),
+					vscode.l10n.t('No')
+				)
+
+				if (result === vscode.l10n.t('Yes')) {
+					try {
+						const itemPath = path.join(exportPath, item.label)
+						await deleteFileOrFolder(itemPath)
+						recordFilesProvider.refresh()
+					} catch (err) {
+						vscode.window.showErrorMessage(`Error deleting ${item.label}: ${err}`)
+					}
+				}
+			}
+		)
+	)
+
+	// Register reveal in explorer command
+	context.subscriptions.push(
+		vscode.commands.registerCommand('vs-code-recorder.revealInExplorer', (item: RecordFile) => {
+			const exportPath = getExportPath()
+			if (!exportPath) {
+				return
+			}
+
+			const itemPath = path.join(exportPath, item.label)
+			vscode.commands.executeCommand('revealFileInOS', vscode.Uri.file(itemPath))
 		})
 	)
 
