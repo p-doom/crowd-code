@@ -163,14 +163,25 @@ export function activate(context: vscode.ExtensionContext): void {
 			if (isCurrentFileExported()) {
 				return
 			}
-			const editorText = vscode.window.activeTextEditor?.document.getText()
+			const currentFileUri = editor.document.uri.toString()
+			let tabEventText = ''
+
+			if (recording.activatedFiles) {
+				if (!recording.activatedFiles.has(currentFileUri)) {
+					tabEventText = editor.document.getText()
+					recording.activatedFiles.add(currentFileUri)
+				}
+			} else {
+				throw new Error("Warning: recording.activatedFiles was not available during TAB event logging.")
+			}
+
 			recording.sequence++
 			addToFileQueue(
 				buildCsvRow({
 					sequence: recording.sequence,
 					rangeOffset: 0,
 					rangeLength: 0,
-					text: editorText ?? '',
+					text: tabEventText,
 					type: ChangeType.TAB,
 				})
 			)

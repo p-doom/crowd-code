@@ -35,4 +35,5 @@ export interface Recording {
 	endDateTime: Date | null
 	sequence: number
 	customFolderName?: string
+	activatedFiles?: Set<string>
 }

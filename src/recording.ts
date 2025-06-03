@@ -34,6 +34,7 @@ export const recording: Recording = {
 	endDateTime: null,
 	sequence: 0,
 	customFolderName: '',
+	activatedFiles: new Set<string>(),
 }
 
 let intervalId: NodeJS.Timeout
@@ -148,6 +149,7 @@ export async function startRecording(): Promise<void> {
 	}
 
 	recording.startDateTime = new Date()
+	recording.activatedFiles = new Set<string>()
 
 	// Ask for folder name if enabled in settings
 	let customFolderName: string | undefined
@@ -185,22 +187,27 @@ export async function startRecording(): Promise<void> {
 	logToOutput(vscode.l10n.t('Recording started'), 'info')
 
 	const editorText = vscode.window.activeTextEditor?.document.getText()
+	const activeEditorUri = vscode.window.activeTextEditor?.document.uri.toString()
 
-	recording.sequence++
-	const csvRow = {
-		sequence: recording.sequence,
-		rangeOffset: 0,
-		rangeLength: 0,
-		text: editorText ?? '',
-		type: ChangeType.TAB,
+	if (editorText !== undefined && activeEditorUri) {
+		recording.sequence++
+		const csvRow = {
+			sequence: recording.sequence,
+			rangeOffset: 0,
+			rangeLength: 0,
+			text: editorText,
+			type: ChangeType.TAB,
+		}
+		addToFileQueue(buildCsvRow({ ...csvRow, type: 'heading' }))
+		addToFileQueue(buildCsvRow(csvRow))
+		appendToFile()
+		recording.activatedFiles.add(activeEditorUri)
+		actionsProvider.setCurrentFile(vscode.window.activeTextEditor.document.fileName)
 	}
-	addToFileQueue(buildCsvRow({ ...csvRow, type: 'heading' }))
-	addToFileQueue(buildCsvRow(csvRow))
-	appendToFile()
+
 	extContext.subscriptions.push(onChangeSubscription)
 	updateStatusBarItem()
 	actionsProvider.setRecordingState(true)
-	actionsProvider.setCurrentFile(vscode.window.activeTextEditor.document.fileName)
 }
 
 /**
@@ -215,6 +222,7 @@ export function stopRecording(force = false): void {
 	recording.isRecording = false
 	clearInterval(intervalId)
 	recording.timer = 0
+	recording.activatedFiles?.clear()
 	const index = extContext.subscriptions.indexOf(onChangeSubscription)
 	if (index !== -1) {
 		extContext.subscriptions.splice(index, 1)
