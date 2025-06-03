@@ -11,7 +11,7 @@ import {
 	buildCsvRow,
 	appendToFile,
 } from './recording'
-import { ChangeType } from './types'
+import { ChangeType, CSVRowBuilder } from './types'
 import { RecordFilesProvider } from './recordFilesProvider'
 import type { RecordFile } from './recordFilesProvider'
 import { ActionsProvider } from './actionsProvider'
@@ -178,6 +178,52 @@ export function activate(context: vscode.ExtensionContext): void {
 			actionsProvider.setCurrentFile(editor.document.fileName)
 		}
 	})
+
+	context.subscriptions.push(
+		vscode.window.onDidChangeTextEditorSelection(event => {
+			if (recording.isRecording && event.textEditor === vscode.window.activeTextEditor) {
+				if (isCurrentFileExported()) {
+					return
+				}
+
+				const editor = event.textEditor
+				// For simplicity, we'll log the primary selection.
+				const selection = event.selections[0]
+				if (!selection) {
+					return
+				}
+
+				const selectedText = editor.document.getText(selection)
+				let changeType: string
+
+				switch (event.kind) {
+					case vscode.TextEditorSelectionChangeKind.Keyboard:
+						changeType = ChangeType.SELECTION_KEYBOARD
+						break
+					case vscode.TextEditorSelectionChangeKind.Mouse:
+						changeType = ChangeType.SELECTION_MOUSE
+						break
+					case vscode.TextEditorSelectionChangeKind.Command:
+						changeType = ChangeType.SELECTION_COMMAND
+						break
+					default:
+						throw new TypeError("Unknown selection change kind.")
+				}
+
+				recording.sequence++
+				const csvRowParams: CSVRowBuilder = {
+					sequence: recording.sequence,
+					rangeOffset: editor.document.offsetAt(selection.start),
+					rangeLength: editor.document.offsetAt(selection.end) - editor.document.offsetAt(selection.start),
+					text: selectedText,
+					type: changeType,
+				}
+				addToFileQueue(buildCsvRow(csvRowParams))
+				appendToFile()
+				actionsProvider.setCurrentFile(editor.document.fileName)
+			}
+		})
+	)
 
 	statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 9000)
 	updateStatusBarItem()

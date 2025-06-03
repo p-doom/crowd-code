@@ -6,6 +6,9 @@ export interface File {
 export enum ChangeType {
 	CONTENT = 'content',
 	TAB = 'tab',
+	SELECTION_KEYBOARD = 'selection_keyboard',
+	SELECTION_MOUSE = 'selection_mouse',
+	SELECTION_COMMAND = 'selection_command',
 }
 
 export interface CSVRowBuilder {
