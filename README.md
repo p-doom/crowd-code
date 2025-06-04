@@ -1,10 +1,10 @@
-# 🔴 VS Code Recorder
+# ⚫ crowd-code
 
 This extension provides functionality to record changes made in the active text editor in Visual Studio Code. The changes are recorded in a CSV file and can be processed to generate output files in SRT and JSON formats.
 
 ## 📚 Table of Contents
 
-- [🔴 VS Code Recorder](#-vs-code-recorder)
+- [⚫ crowd-code](#-crowd-code)
   - [📚 Table of Contents](#-table-of-contents)
   - [📖 Usage](#-usage)
   - [📄 Output](#-output)
@@ -18,7 +18,7 @@ This extension provides functionality to record changes made in the active text 
 
 ## 📖 Usage
 
-![VS Code Recorder Extension](https://raw.githubusercontent.com/mattia-consiglio/vs-code-recorder/main/img/preview.gif)
+![crowd-code Extension](https://raw.githubusercontent.com/mattia-consiglio/vs-code-recorder/main/img/preview.gif)
 
 You can control the recording in two ways:
 
