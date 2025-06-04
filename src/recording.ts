@@ -39,6 +39,7 @@ export const recording: Recording = {
 
 let intervalId: NodeJS.Timeout
 const fileQueue: File[] = []
+let isAppending = false
 
 /**
  * Builds a CSV row with the given parameters.
@@ -190,17 +191,17 @@ export async function startRecording(): Promise<void> {
 	const activeEditorUri = vscode.window.activeTextEditor?.document.uri.toString()
 
 	if (editorText !== undefined && activeEditorUri) {
-		recording.sequence++
-		const csvRow = {
-			sequence: recording.sequence,
-			rangeOffset: 0,
-			rangeLength: 0,
+	recording.sequence++
+	const csvRow = {
+		sequence: recording.sequence,
+		rangeOffset: 0,
+		rangeLength: 0,
 			text: editorText,
-			type: ChangeType.TAB,
-		}
-		addToFileQueue(buildCsvRow({ ...csvRow, type: 'heading' }))
-		addToFileQueue(buildCsvRow(csvRow))
-		appendToFile()
+		type: ChangeType.TAB,
+	}
+	addToFileQueue(buildCsvRow({ ...csvRow, type: 'heading' }))
+	addToFileQueue(buildCsvRow(csvRow))
+	appendToFile()
 		recording.activatedFiles.add(activeEditorUri)
 		actionsProvider.setCurrentFile(vscode.window.activeTextEditor.document.fileName)
 	}
@@ -245,46 +246,44 @@ export function stopRecording(force = false): void {
 }
 
 /**
- * Appends the provided text to the file at the specified file path.
- * @param filePath - The path to the file to append to.
- * @param text - The text to append to the file.
- * @returns A Promise that resolves when the file has been appended to.
- */
-const appendFileUtil = util.promisify(fs.appendFile)
-
-/**
  * Appends data from the file queue to the appropriate file in the workspace.
  */
 export async function appendToFile(): Promise<void> {
+	if (isAppending) {
+		return
+	}
+	isAppending = true
+
 	const exportPath = getExportPath()
 	if (!exportPath) {
+		logToOutput('Export path not available in appendToFile, stopping recording.', 'error')
 		stopRecording(true)
+		isAppending = false
 		return
 	}
 
-	while (fileQueue.length) {
-		const filePath = path.join(exportPath, fileQueue[0].name)
-		await addToFile(filePath, fileQueue[0].content)
-	}
-}
-
-/**
- * Appends text to a file at the specified file path.
- * @param filePath - The path to the file.
- * @param text - The text to append.
- */
-async function addToFile(filePath: string, text: string): Promise<void> {
-	try {
-		// Ensure the directory exists
-		const directory = path.dirname(filePath)
-		if (!fs.existsSync(directory)) {
-			fs.mkdirSync(directory, { recursive: true })
+	while (fileQueue.length > 0) {
+		const itemToAppend = fileQueue.shift()
+		if (!itemToAppend) {
+			continue
 		}
-		await appendFileUtil(filePath, text)
-		fileQueue.shift()
-	} catch (err) {
-		console.error('Failed to append to file:', err)
+
+		const filePath = path.join(exportPath, itemToAppend.name)
+
+		try {
+			const directory = path.dirname(filePath)
+			if (!fs.existsSync(directory)) {
+				fs.mkdirSync(directory, { recursive: true })
+			}
+			await fs.promises.appendFile(filePath, itemToAppend.content)
+		} catch (err) {
+			logToOutput(
+				`Failed to append to file ${filePath}: ${err}. Item dropped. Content: ${itemToAppend.content.substring(0, 100)}...`,
+				'error'
+			)
+		}
 	}
+	isAppending = false
 }
 
 /**
