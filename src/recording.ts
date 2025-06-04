@@ -62,13 +62,18 @@ export function buildCsvRow({
 		return
 	}
 
-	if (type === 'heading') {
+	const time = new Date().getTime() - recording.startDateTime.getTime()
+
+	if (type === ChangeType.HEADING) {
 		return 'Sequence,Time,File,RangeOffset,RangeLength,Text,Language,Type\n'
 	}
-	const time = new Date().getTime() - recording.startDateTime.getTime()
-	return `${sequence},${time},"${getEditorFileName()}",${rangeOffset},${rangeLength},"${escapeString(
-		text
-	)}",${getEditorLanguage()},${type}\n`
+
+	if (type === ChangeType.TERMINAL_FOCUS || type === ChangeType.TERMINAL_COMMAND || type === ChangeType.TERMINAL_OUTPUT) {
+		return `${sequence},${time},"TERMINAL",${rangeOffset},${rangeLength},"${escapeString(text)}",,${type}\n`
+	}
+
+	const editorFileName = getEditorFileName()
+	return `${sequence},${time},"${editorFileName}",${rangeOffset},${rangeLength},"${escapeString(text)}",${getEditorLanguage()},${type}\n`
 }
 
 /**
@@ -199,7 +204,7 @@ export async function startRecording(): Promise<void> {
 			text: editorText,
 		type: ChangeType.TAB,
 	}
-	addToFileQueue(buildCsvRow({ ...csvRow, type: 'heading' }))
+	addToFileQueue(buildCsvRow({ ...csvRow, type: ChangeType.HEADING }))
 	addToFileQueue(buildCsvRow(csvRow))
 	appendToFile()
 		recording.activatedFiles.add(activeEditorUri)

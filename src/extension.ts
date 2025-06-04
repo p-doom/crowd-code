@@ -236,6 +236,59 @@ export function activate(context: vscode.ExtensionContext): void {
 		})
 	)
 
+	context.subscriptions.push(
+		vscode.window.onDidChangeActiveTerminal((terminal: vscode.Terminal | undefined) => {
+			if (terminal && recording.isRecording) {
+				if (isCurrentFileExported()) {
+					return
+				}
+				recording.sequence++
+				addToFileQueue(
+					buildCsvRow({
+						sequence: recording.sequence,
+						rangeOffset: 0,
+						rangeLength: 0,
+						text: terminal.name,
+						type: ChangeType.TERMINAL_FOCUS,
+					})
+				)
+				appendToFile()
+				actionsProvider.setCurrentFile(`Terminal: ${terminal.name}`)
+			}
+		})
+	)
+
+	context.subscriptions.push(
+		vscode.window.onDidStartTerminalShellExecution(async (event: vscode.TerminalShellExecutionStartEvent) => {
+			if (recording.isRecording) {
+				if (isCurrentFileExported()) {
+					return
+				}
+				const commandLine = event.execution.commandLine.value
+				recording.sequence++
+				addToFileQueue(
+					buildCsvRow({
+						sequence: recording.sequence,
+						rangeOffset: 0,
+						rangeLength: 0,
+						text: commandLine,
+						type: ChangeType.TERMINAL_COMMAND,
+					})
+				)
+				appendToFile()
+
+				const stream = event.execution.read()
+				for await (const data of stream) {
+					recording.sequence++
+					addToFileQueue(
+						buildCsvRow({ sequence: recording.sequence, rangeOffset: 0, rangeLength: 0, text: data, type: ChangeType.TERMINAL_OUTPUT })
+					)
+					appendToFile()
+				}
+			}
+		})
+	)
+
 	statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 9000)
 	updateStatusBarItem()
 	context.subscriptions.push(statusBarItem)
