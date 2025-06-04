@@ -3,7 +3,7 @@
   "displayName": "%displayName%",
   "description": "%description%",
   "version": "1.1.1",
-  "publisher": "pdoom.org",
+  "publisher": "pdoom-org",
   "icon": "icon.png",
   "engines": {
     "vscode": "^1.89.0"
@@ -59,7 +59,7 @@
       "activitybar": [
         {
           "id": "vs-code-recorder",
-          "title": "VS Code Recorder",
+          "title": "crowd-code",
           "icon": "icon.svg"
         }
       ]
