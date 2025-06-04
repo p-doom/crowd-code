@@ -1,6 +1,10 @@
 # ⚫ crowd-code
 
-This extension provides functionality to record changes made in the active text editor in Visual Studio Code. The changes are recorded in a CSV file and can be processed to generate output files in SRT and JSON formats.
+This extension provides functionality to record IDE actions. Currently supported actions include text insertions, deletions, undo, redo, cursor movement (including VIM motions), file switches, terminal invocation and terminal command execution (both input and output). The changes are recorded in a CSV file and can be processed to generate output files in SRT and JSON formats. 
+
+All uncaptured data is lost data. We want to crowd-source a dense dataset of IDE actions to eventually finetune models on. This would (to the best of our knowledge) constitute the first crowd-sourced dataset of dense IDE actions.
+
+We thank Mattia Consiglio for his awesome work on the upstream repository, which made our lives infinitely easier.
 
 ## 📚 Table of Contents
 
@@ -20,7 +24,8 @@ This extension provides functionality to record changes made in the active text 
 
 ![crowd-code Extension](https://raw.githubusercontent.com/mattia-consiglio/vs-code-recorder/main/img/preview.gif)
 
-You can control the recording in two ways:
+As soon as the extension activates, recording commences automatically. Recording automatically stop upon IDE closure.
+Additionally, you can control the recording in two ways:
 
 1. Using the status bar (on the right): Click on "Start recording" to begin and "Stop recording" to end.
 2. Using the VS Code Recorder sidebar: Click on the extension icon in the activity bar to open the sidebar, where you can:
@@ -52,6 +57,8 @@ The recorded changes are saved in a CSV file in your workspace.
 Then, this file is processed to generate output files in SRT and JSON formats, providing a detailed and accessible log of your coding session.
 
 ## ▶️ Play it back!
+
+Playback is a feature by the upstream repository. We have not tested playback using our modified repository (e.g. cursor movement and terminal capture are not implemented upstream; chances are high that playback simply breaks using recordings captured by crowd-code). If you want to try this nonetheless:
 
 - The output files can be played back in the [VS Code Recorder Player web app](https://github.com/mattia-consiglio/vs-code-recorder-player).
 - 🚧 React component available soon...
@@ -98,9 +105,9 @@ There are currently no known issues with this extension.
 
 If you'd like to contribute to this extension, please feel free to fork the repository and submit a pull request.
 
-## 💸 Support me
+## 💸 Support the upstream author
 
-If you like this extension, please consider [supporting me](https://www.paypal.com/donate/?hosted_button_id=D5EUDQ5VEJCSL)!
+If you like this extension, please consider [supporting the author of the upstream repository](https://www.paypal.com/donate/?hosted_button_id=D5EUDQ5VEJCSL)!
 
 ## 📝 Release Notes
 
