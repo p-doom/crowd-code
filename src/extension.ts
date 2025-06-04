@@ -67,7 +67,7 @@ async function deleteFileOrFolder(filePath: string): Promise<void> {
 export function activate(context: vscode.ExtensionContext): void {
 	extContext = context
 	outputChannel.show()
-	logToOutput(vscode.l10n.t('Activating VS Code Recorder'), 'info')
+	logToOutput(vscode.l10n.t('Activating crowd-code'), 'info')
 
 	// Register Record Files Provider
 	const recordFilesProvider = new RecordFilesProvider()
@@ -296,7 +296,7 @@ export function activate(context: vscode.ExtensionContext): void {
 }
 
 export function deactivate(): void {
-	logToOutput(vscode.l10n.t('Deactivating VS Code Recorder'), 'info')
+	logToOutput(vscode.l10n.t('Deactivating crowd-code'), 'info')
 	if (recording.isRecording) {
 		stopRecording()
 	}

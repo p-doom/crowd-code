@@ -9,7 +9,7 @@ interface DefaultConfiguration {
 
 const defaultConfiguration = contributes.configuration.properties
 
-export const outputChannel = vscode.window.createOutputChannel('VS Code Recorder')
+export const outputChannel = vscode.window.createOutputChannel('crowd-code')
 
 /**
  * Retrieves the configuration object for the 'vsCodeRecorder' extension.
@@ -41,7 +41,7 @@ export async function createPath(path: string) {
 }
 
 /**
- * Retrieves the export path for the VS Code Recorder extension, handling various scenarios such as:
+ * Retrieves the export path for the crowd-code extension, handling various scenarios such as:
  * - If no export path is specified, it prompts the user to reset to default or open the settings.
  * - If the export path starts with '${workspaceFolder}', it replaces it with the actual workspace path.
  * - If the export path does not exist and the 'export.createPathOutsideWorkspace' setting is false, it prompts the user to reset to default or open the settings.
