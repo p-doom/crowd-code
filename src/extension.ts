@@ -292,9 +292,13 @@ export function activate(context: vscode.ExtensionContext): void {
 	statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 9000)
 	updateStatusBarItem()
 	context.subscriptions.push(statusBarItem)
+	startRecording().catch(err => logToOutput(`Autostart recording failed unexpectedly: ${err}`, 'error'));
 }
 
 export function deactivate(): void {
 	logToOutput(vscode.l10n.t('Deactivating VS Code Recorder'), 'info')
+	if (recording.isRecording) {
+		stopRecording()
+	}
 	statusBarItem.dispose()
 }
