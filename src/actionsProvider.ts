@@ -150,8 +150,10 @@ export class ActionsProvider implements vscode.TreeDataProvider<ActionItem> {
 
 		// Current file (only when recording)
 		if (this._isRecording && this._currentFile) {
+			const prefix = this._currentFile.startsWith('Terminal:') ? '' : 'Current File: '
+			const displayedFile = this._currentFile.startsWith('Terminal:') ? this._currentFile : vscode.workspace.asRelativePath(this._currentFile)
 			const currentFile = new ActionItem(
-				`Current File: ${vscode.workspace.asRelativePath(this._currentFile)}`,
+				`${prefix}${displayedFile}`,
 				vscode.TreeItemCollapsibleState.None,
 				undefined,
 				'file'

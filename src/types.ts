@@ -4,8 +4,15 @@ export interface File {
 }
 
 export enum ChangeType {
+	HEADING = 'heading',
 	CONTENT = 'content',
 	TAB = 'tab',
+	TERMINAL_FOCUS = 'terminal_focus',
+	TERMINAL_COMMAND = 'terminal_command',
+	TERMINAL_OUTPUT = 'terminal_output',
+	SELECTION_KEYBOARD = 'selection_keyboard',
+	SELECTION_MOUSE = 'selection_mouse',
+	SELECTION_COMMAND = 'selection_command',
 }
 
 export interface CSVRowBuilder {
@@ -32,4 +39,5 @@ export interface Recording {
 	endDateTime: Date | null
 	sequence: number
 	customFolderName?: string
+	activatedFiles?: Set<string>
 }
