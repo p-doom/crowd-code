@@ -187,5 +187,8 @@ export function activate(context: vscode.ExtensionContext): void {
 
 export function deactivate(): void {
 	logToOutput(vscode.l10n.t('Deactivating VS Code Recorder'), 'info')
+	if (recording.isRecording) {
+		stopRecording()
+	}
 	statusBarItem.dispose()
 }

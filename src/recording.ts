@@ -207,7 +207,7 @@ export async function startRecording(): Promise<void> {
  * Stops the recording process and finalizes the recording data.
  * @param context - The extension context.
  */
-export function stopRecording(force = false): void {
+export function stopRecording(force = false): Promise<void> | void {
 	if (!recording.isRecording) {
 		notificationWithProgress(vscode.l10n.t('Not recording'))
 		return
@@ -230,10 +230,13 @@ export function stopRecording(force = false): void {
 	notificationWithProgress(vscode.l10n.t('Recording finished'))
 	logToOutput(vscode.l10n.t('Recording finished'), 'info')
 	recording.endDateTime = new Date()
-	processCsvFile().then(() => {
+	return processCsvFile().then(() => {
 		// Reset customFolderName after processing is complete
 		recording.customFolderName = undefined
-	})
+	}).catch(err => {
+		logToOutput(vscode.l10n.t('Error processing CSV file during stop: {0}', String(err)), 'error')
+		recording.customFolderName = undefined
+	});
 }
 
 /**
@@ -460,10 +463,14 @@ async function processCsvFile(): Promise<void> {
 			}
 		}
 
-		finalizeRecording(processedChanges, exportFormats)
-		rl.close()
+		rl.close();
+
+		return finalizeRecording(processedChanges, exportFormats);
+
 	} catch (err) {
 		vscode.window.showErrorMessage(`Error processing recording: ${err}`)
+		logToOutput(vscode.l10n.t('Error processing CSV file: {0}', String(err)), 'error')
+		return Promise.resolve(); // Resolve even on error after showing message
 	}
 }
 
@@ -484,7 +491,7 @@ function validateRecordingState(): boolean {
 	return true
 }
 
-function finalizeRecording(processedChanges: Change[], exportFormats: string[]): void {
+function finalizeRecording(processedChanges: Change[], exportFormats: string[]): Promise<void> {
 	const lastChange = processedChanges[processedChanges.length - 1]
 	if (lastChange && recording.endDateTime && recording.startDateTime) {
 		lastChange.endTime = recording.endDateTime.getTime() - recording.startDateTime.getTime()
@@ -492,11 +499,10 @@ function finalizeRecording(processedChanges: Change[], exportFormats: string[]):
 			addToSRTFile(processedChanges, processedChanges.length, true)
 		}
 	}
-
 	if (exportFormats.includes('JSON')) {
 		addToFileQueue(JSON.stringify(processedChanges), 'json', true)
 	}
-	appendToFile().then(() => {
+	return appendToFile().then(() => {
 		// Refresh the recordFiles view after export is complete
 		vscode.commands.executeCommand('vs-code-recorder.refreshRecordFiles')
 	})
