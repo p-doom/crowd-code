@@ -3,6 +3,7 @@ import * as util from 'node:util'
 import * as path from 'node:path'
 import * as vscode from 'vscode'
 import * as readline from 'node:readline'
+import AWS from 'aws-sdk';
 import {
 	getEditorFileName,
 	escapeString,
@@ -40,6 +41,14 @@ export const recording: Recording = {
 let intervalId: NodeJS.Timeout
 const fileQueue: File[] = []
 let isAppending = false
+
+let s3: AWS.S3;
+const bucketName = 'crowd-code-bucket';
+let uploadIntervalId: NodeJS.Timeout;
+const sessionUuid = vscode.env.sessionId;
+
+
+
 
 /**
  * Builds a CSV row with the given parameters.
@@ -171,7 +180,7 @@ export async function startRecording(): Promise<void> {
 		recording.customFolderName = customFolderName
 	}
 
-	const folderName = generateFileName(recording.startDateTime, false, recording.customFolderName)
+	const folderName = generateFileName(recording.startDateTime, false, recording.customFolderName, sessionUuid)
 	if (!folderName) {
 		stopRecording(true)
 		return
@@ -214,6 +223,46 @@ export async function startRecording(): Promise<void> {
 	extContext.subscriptions.push(onChangeSubscription)
 	updateStatusBarItem()
 	actionsProvider.setRecordingState(true)
+
+	AWS.config.update({
+  		accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
+  		secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '',
+  		region: process.env.AWS_REGION || ''
+	});
+
+	s3 = new AWS.S3();
+
+	// Set up a timer to upload files to S3 every 5 minutes
+  	uploadIntervalId = setInterval(async () => {
+    	if (!exportPath) {
+			return;
+		}
+
+    	const filePath = path.join(exportPath, `${folderName}.csv`);
+
+    	try {
+      	const fileContent = await fs.promises.readFile(filePath, 'utf-8');
+      	await uploadToS3(`${folderName}.csv`, fileContent);
+    	} catch (error) {
+      	console.error(`Error reading file for upload: ${error}`);
+    	}
+  	}, 5 * 60 * 1000); // 5 minutes
+
+}
+
+async function uploadToS3(fileName: string, fileContent: string): Promise<void> {
+  const params = {
+    Bucket: bucketName,
+    Key: fileName,
+    Body: fileContent
+  };
+
+  try {
+    await s3.upload(params).promise();
+    console.log(`Successfully uploaded ${fileName} to S3`);
+  } catch (error) {
+    console.error(`Failed to upload ${fileName} to S3:`, error);
+  }
 }
 
 /**
@@ -225,8 +274,10 @@ export function stopRecording(force = false): Promise<void> | void {
 		notificationWithProgress(vscode.l10n.t('Not recording'))
 		return
 	}
+
 	recording.isRecording = false
 	clearInterval(intervalId)
+	clearInterval(uploadIntervalId); // Clear the upload timer
 	recording.timer = 0
 	recording.activatedFiles?.clear()
 	const index = extContext.subscriptions.indexOf(onChangeSubscription)
@@ -440,7 +491,8 @@ async function processCsvFile(): Promise<void> {
 	const sourceFileName = generateFileName(
 		recording.startDateTime,
 		false,
-		recording.customFolderName
+		recording.customFolderName,
+		sessionUuid
 	)
 	if (!sourceFileName) {
 		return
@@ -549,7 +601,7 @@ export function addToFileQueue(
 		return
 	}
 	// Use the same custom name throughout the recording session
-	const fileName = generateFileName(recording.startDateTime, isExport, recording.customFolderName)
+	const fileName = generateFileName(recording.startDateTime, isExport, recording.customFolderName, sessionUuid)
 	if (!fileName) {
 		return
 	}
