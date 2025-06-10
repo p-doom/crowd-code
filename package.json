@@ -208,6 +208,6 @@
   },
   "dependencies": {
     "@vscode/l10n": "^0.0.18",
-    "aws-sdk": "^2.1692.0"
+    "axios": "^1.7.2"
   }
 }
