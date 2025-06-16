@@ -121,13 +121,13 @@
       "properties": {
         "vsCodeRecorder.export.exportPath": {
           "type": "string",
-          "default": "${workspaceFolder}/vs-code-recorder/",
+          "default": "/tmp/crowd-code/",
           "markdownDescription": "%config.exportPath.description%",
           "order": 0
         },
         "vsCodeRecorder.export.createPathOutsideWorkspace": {
           "type": "boolean",
-          "default": false,
+          "default": true,
           "description": "%config.createPathOutsideWorkspace.description%",
           "order": 1
         },
