@@ -69,6 +69,28 @@ export function activate(context: vscode.ExtensionContext): void {
 	outputChannel.show()
 	logToOutput(vscode.l10n.t('Activating crowd-code'), 'info')
 
+	// Save machineId globally for user to copy
+	const machineId = vscode.env.machineId ?? null;
+	vscode.workspace.getConfiguration().update(
+		'vsCodeRecorder.user.userId',
+		machineId,
+		vscode.ConfigurationTarget.Global
+	)
+
+	// Register userID display
+	context.subscriptions.push(
+		vscode.commands.registerCommand('vs-code-recorder.showUserId', () => {
+			const userId = vscode.workspace.getConfiguration().get<string>('vsCodeRecorder.user.userId', '');
+			if (!userId) {
+				vscode.window.showWarningMessage("User ID not registered yet. Please wait a few seconds until the extension is fully activated.");
+				return;
+			}
+			vscode.window.showInformationMessage(`Your User ID is: ${userId}`);
+		}))
+
+	const userName = process.env.USER || process.env.USERNAME || "coder";
+	logToOutput(`Welcome back ${userName}. Your machine-id is '${machineId}'. Happy coding!`, 'info')
+
 	// Register Record Files Provider
 	const recordFilesProvider = new RecordFilesProvider()
 	context.subscriptions.push(
