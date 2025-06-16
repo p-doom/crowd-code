@@ -1,4 +1,5 @@
 import * as vscode from 'vscode'
+import * as crypto from 'crypto'
 import { getExportPath, logToOutput, outputChannel, addToGitignore } from './utilities'
 import {
 	updateStatusBarItem,
@@ -69,18 +70,18 @@ export function activate(context: vscode.ExtensionContext): void {
 	outputChannel.show()
 	logToOutput(vscode.l10n.t('Activating crowd-code'), 'info')
 
-	// Save machineId globally for user to copy
+	// Save anonUserId globally for user to copy
+	const userName = process.env.USER || process.env.USERNAME || "coder";
 	const machineId = vscode.env.machineId ?? null;
-	vscode.workspace.getConfiguration().update(
-		'vsCodeRecorder.user.userId',
-		machineId,
-		vscode.ConfigurationTarget.Global
-	)
+	const rawId = `${machineId}:${userName}`;
+	const anonUserId = crypto.createHash('sha256').update(rawId).digest('hex') as string;
+
+	extContext.globalState.update('userId', anonUserId);
 
 	// Register userID display
 	context.subscriptions.push(
 		vscode.commands.registerCommand('vs-code-recorder.showUserId', () => {
-			const userId = vscode.workspace.getConfiguration().get<string>('vsCodeRecorder.user.userId', '');
+			const userId = extContext.globalState.get<string>('userId');
 			if (!userId) {
 				vscode.window.showWarningMessage("User ID not registered yet. Please wait a few seconds until the extension is fully activated.");
 				return;
@@ -88,8 +89,7 @@ export function activate(context: vscode.ExtensionContext): void {
 			vscode.window.showInformationMessage(`Your User ID is: ${userId}`);
 		}))
 
-	const userName = process.env.USER || process.env.USERNAME || "coder";
-	logToOutput(`Welcome back ${userName}. Your machine-id is '${machineId}'. Happy coding!`, 'info')
+	logToOutput(`Welcome back ${userName}. Your user-id is '${anonUserId}'. Happy coding!`, 'info')
 
 	// Register Record Files Provider
 	const recordFilesProvider = new RecordFilesProvider()

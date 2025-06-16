@@ -230,7 +230,8 @@ export async function startRecording(): Promise<void> {
 
         const filePath = path.join(exportPath, `${fileName}.csv`);
         const extensionVersion = extContext.extension.packageJSON.version as string;
-        const machineId = vscode.env.machineId ?? null;
+        const userId = extContext.globalState.get<string>('userId');
+
 
         try {
             const fileContent = await fs.promises.readFile(filePath, 'utf-8');
@@ -240,7 +241,7 @@ export async function startRecording(): Promise<void> {
                     fileName: `${fileName}.csv`,
                     content: fileContent,
                     version: extensionVersion,
-                    machineId: machineId
+                    userId: userId
                 };
                 await axios.post(API_GATEWAY_URL, payload);
                 console.log(`Successfully sent ${payload.fileName} to Lambda endpoint.`);
