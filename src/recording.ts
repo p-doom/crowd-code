@@ -3,7 +3,7 @@ import * as util from 'node:util'
 import * as path from 'node:path'
 import * as vscode from 'vscode'
 import * as readline from 'node:readline'
-import axios from 'axios'; // axios for HTTP requests
+import axios from 'axios';
 import {
     getEditorFileName,
     escapeString,
