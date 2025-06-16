@@ -178,14 +178,14 @@ export async function startRecording(): Promise<void> {
         recording.customFolderName = customFolderName
     }
 
-    const folderName = generateFileName(recording.startDateTime, false, recording.customFolderName, sessionUuid)
-    if (!folderName) {
+    const fileName = generateFileName(recording.startDateTime, false, recording.customFolderName, sessionUuid)
+    if (!fileName) {
         stopRecording(true)
         return
     }
 
     // Create the recording folder
-    const folderPath = path.dirname(path.join(exportPath, folderName))
+    const folderPath = path.dirname(path.join(exportPath, fileName))
     createRecordingFolder(folderPath)
 
     recording.isRecording = true
@@ -228,14 +228,14 @@ export async function startRecording(): Promise<void> {
             return;
         }
 
-        const filePath = path.join(exportPath, `${folderName}.csv`);
+        const filePath = path.join(exportPath, `${fileName}.csv`);
 
         try {
             const fileContent = await fs.promises.readFile(filePath, 'utf-8');
 
             if (fileContent) {
                 const payload = {
-                    fileName: `${folderName}.csv`,
+                    fileName: `${fileName}.csv`,
                     content: fileContent
                 };
                 await axios.post(API_GATEWAY_URL, payload);
