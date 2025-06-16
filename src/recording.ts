@@ -233,7 +233,7 @@ export async function startRecording(): Promise<void> {
         try {
             const fileContent = await fs.promises.readFile(filePath, 'utf-8');
 
-            if (fileContent) { // Only send if content is not empty
+            if (fileContent) {
                 const payload = {
                     fileName: `${folderName}.csv`,
                     content: fileContent
