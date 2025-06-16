@@ -45,7 +45,6 @@ let isAppending = false
 let uploadIntervalId: NodeJS.Timeout;
 const sessionUuid = vscode.env.sessionId;
 
-// API Gateway Endpoint URL constant
 const API_GATEWAY_URL = 'https://knm3fmbwbi.execute-api.us-east-1.amazonaws.com/v1/recordings';
 
 
