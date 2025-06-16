@@ -246,7 +246,6 @@ export async function startRecording(): Promise<void> {
                 console.warn(`File not found at ${filePath}. It might be created on first write.`);
             } else {
                 console.error(`Error sending data to Lambda: ${error.message}`);
-                // Optionally, log more details based on error type (e.g., axios.isAxiosError(error))
                 if (axios.isAxiosError(error) && error.response) {
                     console.error("Lambda response status:", error.response.status);
                     console.error("Lambda response data:", error.response.data);
