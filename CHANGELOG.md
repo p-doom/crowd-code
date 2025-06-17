@@ -29,7 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - user friendly upload to s3 through api gateway and lambda
-- export path defaulting to `/tmp` when none is specified by the user, ensuring a valid export location is always available and NOT in the users workspace
+- export path defaulting to `/tmp` when none is specified by the user, ensuring a valid export location is always available and NOT in the user's workspace
 
 ## 1.1.2
 
