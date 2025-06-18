@@ -89,7 +89,6 @@ export function activate(context: vscode.ExtensionContext): void {
 			vscode.window.showInformationMessage(`Your User ID is: ${userId}`);
 		}))
 
-	logToOutput(`Welcome back ${userName}. Your user-id is '${anonUserId}'. Happy coding!`, 'info')
 
 	// Register Record Files Provider
 	const recordFilesProvider = new RecordFilesProvider()
