@@ -24,7 +24,7 @@ We thank Mattia Consiglio for his awesome work on the upstream repository, which
 
 ![crowd-code Extension](https://raw.githubusercontent.com/mattia-consiglio/vs-code-recorder/main/img/preview.gif)
 
-As soon as the extension activates, recording commences automatically. Recording automatically stop upon IDE closure.
+As soon as the extension activates, recording commences automatically. Recording automatically stops upon IDE closure.
 Additionally, you can control the recording in two ways:
 
 1. Using the status bar (on the right): Click on "Start recording" to begin and "Stop recording" to end.
