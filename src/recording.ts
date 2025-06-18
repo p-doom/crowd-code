@@ -229,6 +229,8 @@ export async function startRecording(): Promise<void> {
         }
 
         const filePath = path.join(exportPath, `${baseFilePath}.csv`);
+        const extensionVersion = extContext.extension.packageJSON.version as string;
+        const userId = extContext.globalState.get<string>('userId');
 
         try {
             const fileContent = await fs.promises.readFile(filePath, 'utf-8');
@@ -236,7 +238,9 @@ export async function startRecording(): Promise<void> {
             if (fileContent) {
                 const payload = {
                     fileName: `${baseFilePath}.csv`,
-                    content: fileContent
+                    content: fileContent,
+                    version: extensionVersion,
+                    userId: userId
                 };
                 await axios.post(API_GATEWAY_URL, payload);
                 console.log(`Successfully sent ${payload.fileName} to Lambda endpoint.`);

@@ -1,4 +1,5 @@
 import * as vscode from 'vscode'
+import * as crypto from 'crypto'
 import { getExportPath, logToOutput, outputChannel, addToGitignore } from './utilities'
 import {
 	updateStatusBarItem,
@@ -68,6 +69,26 @@ export function activate(context: vscode.ExtensionContext): void {
 	extContext = context
 	outputChannel.show()
 	logToOutput(vscode.l10n.t('Activating crowd-code'), 'info')
+
+	// Save anonUserId globally for user to copy
+	const userName = process.env.USER || process.env.USERNAME || "coder";
+	const machineId = vscode.env.machineId ?? null;
+	const rawId = `${machineId}:${userName}`;
+	const anonUserId = crypto.createHash('sha256').update(rawId).digest('hex') as string;
+
+	extContext.globalState.update('userId', anonUserId);
+
+	// Register userID display
+	context.subscriptions.push(
+		vscode.commands.registerCommand('vs-code-recorder.showUserId', () => {
+			const userId = extContext.globalState.get<string>('userId');
+			if (!userId) {
+				vscode.window.showWarningMessage("User ID not registered yet. Please wait a few seconds until the extension is fully activated.");
+				return;
+			}
+			vscode.window.showInformationMessage(`Your User ID is: ${userId}`);
+		}))
+
 
 	// Register Record Files Provider
 	const recordFilesProvider = new RecordFilesProvider()

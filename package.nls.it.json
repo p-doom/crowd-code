@@ -6,6 +6,7 @@
 	"command.openSettings.title": "crowd-code: Apri Impostazioni",
 	"command.refreshRecordFiles.title": "crowd-code: Aggiorna",
 	"command.addToGitignore.title": "Aggiungi a .gitignore",
+	"command.showUserId.title": "crowd-code: Mostra ID Utente",
 	"config.title": "crowd-code",
 	"config.exportPath.description": "Imposta il percorso di esportazione. Usa `${workspaceFolder}` per esportare nella cartella del workspace. Se il percorso non esiste nel workspace, verrà creato.",
 	"config.createPathOutsideWorkspace.description": "Crea il percorso di esportazione fuori dal workspace",

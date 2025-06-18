@@ -53,6 +53,10 @@
         "command": "vs-code-recorder.addToGitignore",
         "title": "%command.addToGitignore.title%",
         "icon": "$(git-ignore)"
+      },
+      {
+        "command": "vs-code-recorder.showUserId",
+        "title": "%command.showUserId.title%"
       }
     ],
     "viewsContainers": {
