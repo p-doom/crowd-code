@@ -1,6 +1,6 @@
 # ⚫ crowd-code
 
-This extension provides functionality to record IDE actions. Currently supported actions include text insertions, deletions, undo, redo, cursor movement (including VIM motions), file switches, terminal invocation and terminal command execution (both input and output). The changes are recorded in a CSV file and uploaded to an s3 bucket, which we plan to thoroughly clean, process, and eventually share with the community. 
+This extension provides functionality to record IDE actions. Currently supported actions include text insertions, deletions, undo, redo, cursor movement (including VIM motions), file switches, terminal invocation and terminal command execution (both input and output). The changes are recorded in a CSV file and uploaded to an S3 bucket, which we plan to thoroughly clean, process, and eventually share with the community. 
 
 All uncaptured data is lost data. We want to crowd-source a dense dataset of IDE actions to eventually finetune models on. This would (to the best of our knowledge) constitute the first crowd-sourced dataset of dense IDE actions.
 
