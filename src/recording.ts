@@ -232,7 +232,6 @@ export async function startRecording(): Promise<void> {
         const extensionVersion = extContext.extension.packageJSON.version as string;
         const userId = extContext.globalState.get<string>('userId');
 
-
         try {
             const fileContent = await fs.promises.readFile(filePath, 'utf-8');
 
