@@ -73,6 +73,18 @@ export function getExportPath(): string | undefined {
 			)
 		}
 	}
+	if(outputExportPath?.startsWith('/tmp')) {
+		try {
+			if (!fs.existsSync(outputExportPath)) {
+				fs.mkdirSync(outputExportPath, { recursive: true })
+			}
+		} catch (err) {
+			const errorMessage = vscode.l10n.t('Failed to create export path: {0}', String(err));
+			vscode.window.showErrorMessage(errorMessage);
+			logToOutput(errorMessage, 'error');
+			return
+		}
+	}
 
 	if (!outputExportPath) {
 		const exportPathNotFoundMessage = vscode.l10n.t('No export path specified')
@@ -125,9 +137,6 @@ export function getExportPath(): string | undefined {
 		outputExportPath += '/'
 	}
 
-	if (!exportPath?.startsWith('${workspaceFolder}')) {
-		getConfig().update('export.exportPath', outputExportPath, vscode.ConfigurationTarget.Global)
-	}
 	if (path.sep === '/') {
 		outputExportPath = outputExportPath.replaceAll('/', path.sep)
 	}

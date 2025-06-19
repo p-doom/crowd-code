@@ -67,11 +67,11 @@ Playback is a feature by the upstream repository. We have not tested playback us
 
 - `vsCodeRecorder.export.exportPath`: Set the export path. Use `${workspaceFolder}` to export to the workspace folder. In case the path does not exist in the workspace, it will be created.
 
-  Default: `${workspaceFolder}/vs-code-recorder/`
+  Default: `/tmp/crowd-code/`
 
 - `vsCodeRecorder.export.createPathOutsideWorkspace`: Create the export path outside the workspace if it doesn't exist
 
-  Default: `false`
+  Default: `true`
 
 - `vsCodeRecorder.export.addToGitignore`: Add the export path to .gitignore when creating the folder
 
