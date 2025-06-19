@@ -164,10 +164,11 @@ export function logToOutput(message: string, type: 'info' | 'success' | 'error' 
  * @param customName - Optional custom name for the folder.
  * @returns The generated file name.
  */
-export function generateFileName(
+export function generateBaseFilePath(
 	date: Date | null,
 	isExport = false,
-	customName?: string
+	customName?: string, 
+	sessionId?: string
 ): string | undefined {
 	if (!date) {
 		return
@@ -181,7 +182,8 @@ export function generateFileName(
 	const milliseconds = date.getMilliseconds().toString().padStart(2, '0')
 
 	const timestamp = `${year}_${month}_${day}-${hours}.${minutes}.${seconds}.${milliseconds}`
-	const folderName = customName ? `${customName}-${timestamp}` : `vs-code-recorder-${timestamp}`
+	const default_name = sessionId ? `crowd-code-${sessionId}-${timestamp}` : `crowd-code-${timestamp}`
+	const folderName = customName ? `${customName}-${timestamp}` : default_name
 	const fileName = isExport ? 'recording' : 'source'
 
 	return `${folderName}/${fileName}`

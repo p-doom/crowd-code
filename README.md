@@ -1,6 +1,6 @@
 # ⚫ crowd-code
 
-This extension provides functionality to record IDE actions. Currently supported actions include text insertions, deletions, undo, redo, cursor movement (including VIM motions), file switches, terminal invocation and terminal command execution (both input and output). The changes are recorded in a CSV file and can be processed to generate output files in SRT and JSON formats. 
+This extension provides functionality to record IDE actions. Currently supported actions include text insertions, deletions, undo, redo, cursor movement (including VIM motions), file switches, terminal invocation and terminal command execution (both input and output). The changes are recorded in a CSV file and uploaded to an S3 bucket, which we plan to thoroughly clean, process, and eventually share with the community. 
 
 All uncaptured data is lost data. We want to crowd-source a dense dataset of IDE actions to eventually finetune models on. This would (to the best of our knowledge) constitute the first crowd-sourced dataset of dense IDE actions.
 
@@ -24,7 +24,7 @@ We thank Mattia Consiglio for his awesome work on the upstream repository, which
 
 ![crowd-code Extension](https://raw.githubusercontent.com/mattia-consiglio/vs-code-recorder/main/img/preview.gif)
 
-As soon as the extension activates, recording commences automatically. Recording automatically stop upon IDE closure.
+As soon as the extension activates, recording commences automatically. Recording automatically stops upon IDE closure.
 Additionally, you can control the recording in two ways:
 
 1. Using the status bar (on the right): Click on "Start recording" to begin and "Stop recording" to end.
