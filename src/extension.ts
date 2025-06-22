@@ -24,7 +24,7 @@ export let extContext: vscode.ExtensionContext
 export let actionsProvider: ActionsProvider
 
 function onConfigurationChange(event: vscode.ConfigurationChangeEvent) {
-	if (event.affectsConfiguration('vsCodeRecorder')) {
+	if (event.affectsConfiguration('crowdCode')) {
 		updateStatusBarItem()
 		getExportPath()
 	}
@@ -80,7 +80,7 @@ export function activate(context: vscode.ExtensionContext): void {
 
 	// Register userID display
 	context.subscriptions.push(
-		vscode.commands.registerCommand('vs-code-recorder.showUserId', () => {
+		vscode.commands.registerCommand('crowd-code.showUserId', () => {
 			const userId = extContext.globalState.get<string>('userId');
 			if (!userId) {
 				vscode.window.showWarningMessage("User ID not registered yet. Please wait a few seconds until the extension is fully activated.");
@@ -102,7 +102,7 @@ export function activate(context: vscode.ExtensionContext): void {
 
 	// Register refresh command
 	context.subscriptions.push(
-		vscode.commands.registerCommand('vs-code-recorder.refreshRecordFiles', () => {
+		vscode.commands.registerCommand('crowd-code.refreshRecordFiles', () => {
 			recordFilesProvider.refresh()
 		})
 	)
@@ -110,7 +110,7 @@ export function activate(context: vscode.ExtensionContext): void {
 	// Register delete command
 	context.subscriptions.push(
 		vscode.commands.registerCommand(
-			'vs-code-recorder.deleteRecordFile',
+			'crowd-code.deleteRecordFile',
 			async (item: RecordFile) => {
 				const exportPath = getExportPath()
 				if (!exportPath) {
@@ -138,7 +138,7 @@ export function activate(context: vscode.ExtensionContext): void {
 
 	// Register reveal in explorer command
 	context.subscriptions.push(
-		vscode.commands.registerCommand('vs-code-recorder.revealInExplorer', (item: RecordFile) => {
+		vscode.commands.registerCommand('crowd-code.revealInExplorer', (item: RecordFile) => {
 			const exportPath = getExportPath()
 			if (!exportPath) {
 				return
@@ -165,13 +165,13 @@ export function activate(context: vscode.ExtensionContext): void {
 		vscode.commands.registerCommand(commands.openSettings, () => {
 			vscode.commands.executeCommand(
 				'workbench.action.openSettings',
-				'@ext:MattiaConsiglio.vs-code-recorder'
+				'@ext:MattiaConsiglio.crowd-code'
 			)
 		})
 	)
 
 	context.subscriptions.push(
-		vscode.commands.registerCommand('vs-code-recorder.addToGitignore', async () => {
+		vscode.commands.registerCommand('crowd-code.addToGitignore', async () => {
 			await addToGitignore()
 		})
 	)

@@ -46,9 +46,9 @@ You can customize the recording experience with these features:
 You can also use the command palette to access the extension's features.
 Available commands:
 
-- `vs-code-recorder.startRecording`: Start the recording
-- `vs-code-recorder.stopRecording`: Stop the recording
-- `vs-code-recorder.openSettings`: Open the extension settings
+- `crowd-code.startRecording`: Start the recording
+- `crowd-code.stopRecording`: Stop the recording
+- `crowd-code.openSettings`: Open the extension settings
 
 ## 📄 Output
 
@@ -65,31 +65,31 @@ Playback is a feature by the upstream repository. We have not tested playback us
 
 ## 🔧 Extension Settings
 
-- `vsCodeRecorder.export.exportPath`: Set the export path. Use `${workspaceFolder}` to export to the workspace folder. In case the path does not exist in the workspace, it will be created.
+- `crowdCode.export.exportPath`: Set the export path. Use `${workspaceFolder}` to export to the workspace folder. In case the path does not exist in the workspace, it will be created.
 
-  Default: `${workspaceFolder}/vs-code-recorder/`
+  Default: `${workspaceFolder}/crowd-code/`
 
-- `vsCodeRecorder.export.createPathOutsideWorkspace`: Create the export path outside the workspace if it doesn't exist
-
-  Default: `false`
-
-- `vsCodeRecorder.export.addToGitignore`: Add the export path to .gitignore when creating the folder
+- `crowdCode.export.createPathOutsideWorkspace`: Create the export path outside the workspace if it doesn't exist
 
   Default: `false`
 
-- `vsCodeRecorder.export.exportFormats`: Enabled export formats (SRT or JSON or both)
+- `crowdCode.export.addToGitignore`: Add the export path to .gitignore when creating the folder
+
+  Default: `false`
+
+- `crowdCode.export.exportFormats`: Enabled export formats (SRT or JSON or both)
 
   Default: `["JSON", "SRT"]`
 
-- `vsCodeRecorder.recording.askFolderName`: Ask for a custom folder name before starting a recording
+- `crowdCode.recording.askFolderName`: Ask for a custom folder name before starting a recording
 
   Default: `false`
 
-- `vsCodeRecorder.appearance.minimalMode`: Enable or disable the minimal mode
+- `crowdCode.appearance.minimalMode`: Enable or disable the minimal mode
 
   Default: `false`
 
-- `vsCodeRecorder.appearance.showTimer`: Enable or disable the display time
+- `crowdCode.appearance.showTimer`: Enable or disable the display time
 
   Default: `true`
 

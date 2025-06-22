@@ -12,12 +12,12 @@ const defaultConfiguration = contributes.configuration.properties
 export const outputChannel = vscode.window.createOutputChannel('crowd-code')
 
 /**
- * Retrieves the configuration object for the 'vsCodeRecorder' extension.
+ * Retrieves the configuration object for the 'crowdCode' extension.
  *
- * @returns The configuration object for the 'vsCodeRecorder' extension.
+ * @returns The configuration object for the 'crowdCode' extension.
  */
 export function getConfig() {
-	return vscode.workspace.getConfiguration('vsCodeRecorder')
+	return vscode.workspace.getConfiguration('crowdCode')
 }
 
 /**
@@ -69,7 +69,7 @@ export function getExportPath(): string | undefined {
 		if (selection === vscode.l10n.t('Open Settings')) {
 			vscode.commands.executeCommand(
 				'workbench.action.openSettings',
-				'vsCodeRecorder.export.exportPath'
+				'crowdCode.export.exportPath'
 			)
 		}
 	}
@@ -137,7 +137,7 @@ export function getExportPath(): string | undefined {
 export function setDefaultOptions() {
 	const config = getConfig()
 	for (const [key, value] of Object.entries(defaultConfiguration)) {
-		const configKey = key.replace('vsCodeRecorder.', '')
+		const configKey = key.replace('crowdCode.', '')
 		if ('default' in value) {
 			config.update(configKey, value.default, vscode.ConfigurationTarget.Workspace)
 		}
