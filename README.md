@@ -34,6 +34,7 @@ Additionally, you can control the recording in two ways:
    - See the current file being recorded
    - Manage your recorded files
    - Add the export path to .gitignore
+   - Enable/disable participation in crowd-sourcing the dataset
 
 The extension will automatically record changes in your text editor. When you stop the recording, it will finalize the data and save it to a CSV (source), JSON and SRT files.
 
