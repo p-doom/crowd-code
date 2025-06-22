@@ -167,7 +167,7 @@ export class ActionsProvider implements vscode.TreeDataProvider<ActionItem> {
 				'Add to .gitignore',
 				vscode.TreeItemCollapsibleState.None,
 				{
-					command: 'vs-code-recorder.addToGitignore',
+					command: 'crowd-code.addToGitignore',
 					title: 'Add to .gitignore',
 				},
 				'git-ignore'
