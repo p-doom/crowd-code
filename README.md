@@ -11,6 +11,7 @@ We thank Mattia Consiglio for his awesome work on the upstream repository, which
 - [⚫ crowd-code](#-crowd-code)
   - [📚 Table of Contents](#-table-of-contents)
   - [📖 Usage](#-usage)
+  - [🔒 Privacy](#-privacy)
   - [📄 Output](#-output)
   - [▶️ Play it back!](#️-play-it-back)
   - [🔧 Extension Settings](#-extension-settings)
@@ -50,6 +51,13 @@ Available commands:
 - `vs-code-recorder.startRecording`: Start the recording
 - `vs-code-recorder.stopRecording`: Stop the recording
 - `vs-code-recorder.openSettings`: Open the extension settings
+
+## 🔒 Privacy
+
+We ask for your consent in participating in crowd-sourcing upon installation of the extension. You can always revoke your participation, after which your recorded data will solely be stored on your device.
+
+Your trust means a lot to us, and we will take great care in anonymizing the dataset before sharing it to the research community. At the same time, we strive for ultimate transparency. If you have suggestions on how we can improve our crowd-sourcing setting, we are more than happy to hear your feedback.
+
 
 ## 📄 Output
 
