@@ -23,10 +23,10 @@ import { type File, ChangeType, type CSVRowBuilder, type Change, type Recording 
 import { extContext, statusBarItem, actionsProvider } from './extension'
 
 export const commands = {
-    openSettings: 'vs-code-recorder.openSettings',
-    startRecording: 'vs-code-recorder.startRecording',
-    stopRecording: 'vs-code-recorder.stopRecording',
-    panicButton: 'vs-code-recorder.panicButton',
+    openSettings: 'crowd-code.openSettings',
+    startRecording: 'crowd-code.startRecording',
+    stopRecording: 'crowd-code.stopRecording',
+    panicButton: 'crowd-code.panicButton',
 }
 
 export const recording: Recording = {
@@ -580,7 +580,7 @@ function finalizeRecording(processedChanges: Change[], exportFormats: string[]):
     }
     return appendToFile().then(() => {
         // Refresh the recordFiles view after export is complete
-        vscode.commands.executeCommand('vs-code-recorder.refreshRecordFiles')
+        vscode.commands.executeCommand('crowd-code.refreshRecordFiles')
     })
 }
 
