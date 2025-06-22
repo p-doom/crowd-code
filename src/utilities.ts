@@ -52,9 +52,9 @@ export async function createPath(path: string) {
 export function getExportPath(): string | undefined {
 	const exportPath = getConfig().get<string>('export.exportPath')
 	let outputExportPath = exportPath
-	const resetToDefaultMessage = vscode.l10n.t('Reset to default')
-	const openSettingsMessage = vscode.l10n.t('Open Settings')
-	const cancelMessage = vscode.l10n.t('Cancel')
+	const resetToDefaultMessage = 'Reset to default'
+	const openSettingsMessage = 'Open Settings'
+	const cancelMessage = 'Cancel'
 
 	/**
 	 * Handles the user's selection when prompted to reset the export path to the default or open the settings.
@@ -66,7 +66,7 @@ export function getExportPath(): string | undefined {
 		if (selection === resetToDefaultMessage) {
 			getConfig().update('export.exportPath', undefined, vscode.ConfigurationTarget.Global)
 		}
-		if (selection === vscode.l10n.t('Open Settings')) {
+		if (selection === 'Open Settings') {
 			vscode.commands.executeCommand(
 				'workbench.action.openSettings',
 				'vsCodeRecorder.export.exportPath'
@@ -75,7 +75,7 @@ export function getExportPath(): string | undefined {
 	}
 
 	if (!outputExportPath) {
-		const exportPathNotFoundMessage = vscode.l10n.t('No export path specified')
+		const exportPathNotFoundMessage = 'No export path specified'
 		vscode.window
 			.showErrorMessage(
 				exportPathNotFoundMessage,
@@ -91,7 +91,7 @@ export function getExportPath(): string | undefined {
 	if (outputExportPath?.startsWith('${workspaceFolder}')) {
 		const workspacePath = vscode.workspace.workspaceFolders?.[0].uri.fsPath
 		if (!workspacePath) {
-			const errorMessage = vscode.l10n.t('error.workspaceFolderNotFound')
+			const errorMessage = 'No workspace folder found'
 			vscode.window.showErrorMessage(errorMessage)
 			logToOutput(errorMessage, 'error')
 			return
@@ -103,7 +103,7 @@ export function getExportPath(): string | undefined {
 			!fs.existsSync(outputExportPath) &&
 			getConfig().get<boolean>('export.createPathOutsideWorkspace', false) === false
 		) {
-			const exportPathNotFoundMessage = vscode.l10n.t('Export path does not exist')
+			const exportPathNotFoundMessage = 'Export path does not exist'
 			vscode.window
 				.showErrorMessage(
 					exportPathNotFoundMessage,
@@ -329,7 +329,7 @@ export function unescapeString(text: string): string {
 export async function addToGitignore(): Promise<boolean> {
 	const workspaceFolder = vscode.workspace.workspaceFolders?.[0]
 	if (!workspaceFolder) {
-		vscode.window.showErrorMessage(vscode.l10n.t('error.noWorkspace'))
+		vscode.window.showErrorMessage('No workspace found')
 		return false
 	}
 
@@ -337,7 +337,7 @@ export async function addToGitignore(): Promise<boolean> {
 	const exportPath = getConfig().get<string>('export.exportPath')
 
 	if (!exportPath) {
-		vscode.window.showErrorMessage(vscode.l10n.t('error.noExportPath'))
+		vscode.window.showErrorMessage('No export path specified')
 		return false
 	}
 
@@ -355,7 +355,7 @@ export async function addToGitignore(): Promise<boolean> {
 			content = fs.readFileSync(gitignorePath, 'utf8')
 			// Check if the path is already in .gitignore
 			if (content.split('\n').some(line => line.trim() === relativePath)) {
-				vscode.window.showInformationMessage(vscode.l10n.t('Export path already in .gitignore'))
+				vscode.window.showInformationMessage('Export path already in .gitignore')
 				return false
 			}
 			// Add a newline if the file doesn't end with one
@@ -365,11 +365,11 @@ export async function addToGitignore(): Promise<boolean> {
 		}
 		content = `${content}${relativePath}\n`
 		fs.writeFileSync(gitignorePath, content)
-		vscode.window.showInformationMessage(vscode.l10n.t('Export path added to .gitignore'))
+		vscode.window.showInformationMessage('Export path added to .gitignore')
 		return true
 	} catch (err) {
 		console.error('Error updating .gitignore:', err)
-		vscode.window.showErrorMessage(vscode.l10n.t('Error updating .gitignore'))
+		vscode.window.showErrorMessage('Error updating .gitignore')
 		return false
 	}
 }

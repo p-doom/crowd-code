@@ -11,6 +11,7 @@ import {
 	addToFileQueue,
 	buildCsvRow,
 	appendToFile,
+	panicButton,
 } from './recording'
 import { ChangeType, CSVRowBuilder } from './types'
 import { RecordFilesProvider } from './recordFilesProvider'
@@ -68,7 +69,7 @@ async function deleteFileOrFolder(filePath: string): Promise<void> {
 export function activate(context: vscode.ExtensionContext): void {
 	extContext = context
 	outputChannel.show()
-	logToOutput(vscode.l10n.t('Activating crowd-code'), 'info')
+	logToOutput('Activating crowd-code', 'info')
 
 	// Save anonUserId globally for user to copy
 	const userName = process.env.USER || process.env.USERNAME || "coder";
@@ -118,12 +119,12 @@ export function activate(context: vscode.ExtensionContext): void {
 				}
 
 				const result = await vscode.window.showWarningMessage(
-					vscode.l10n.t('Are you sure you want to delete {name}?', { name: item.label }),
-					vscode.l10n.t('Yes'),
-					vscode.l10n.t('No')
+					`Are you sure you want to delete ${item.label}?`,
+					'Yes',
+					'No'
 				)
 
-				if (result === vscode.l10n.t('Yes')) {
+				if (result === 'Yes') {
 					try {
 						const itemPath = getFullPath(item, exportPath)
 						await deleteFileOrFolder(itemPath)
@@ -158,6 +159,12 @@ export function activate(context: vscode.ExtensionContext): void {
 	context.subscriptions.push(
 		vscode.commands.registerCommand(commands.stopRecording, () => {
 			stopRecording()
+		})
+	)
+
+	context.subscriptions.push(
+		vscode.commands.registerCommand(commands.panicButton, () => {
+			panicButton()
 		})
 	)
 
@@ -317,7 +324,7 @@ export function activate(context: vscode.ExtensionContext): void {
 }
 
 export function deactivate(): void {
-	logToOutput(vscode.l10n.t('Deactivating crowd-code'), 'info')
+	logToOutput('Deactivating crowd-code', 'info')
 	if (recording.isRecording) {
 		stopRecording()
 	}

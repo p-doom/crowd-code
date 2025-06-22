@@ -3,6 +3,7 @@
 	"description": "Registra il codice in formato SRT e JSON",
 	"command.startRecording.title": "crowd-code: Avvia Registrazione",
 	"command.stopRecording.title": "crowd-code: Ferma Registrazione",
+	"command.panicButton.title": "crowd-code: Pulsante Panico",
 	"command.openSettings.title": "crowd-code: Apri Impostazioni",
 	"command.refreshRecordFiles.title": "crowd-code: Aggiorna",
 	"command.addToGitignore.title": "Aggiungi a .gitignore",
@@ -28,5 +29,12 @@
 	"dialog.enterFolderName.placeholder": "Inserisci nome cartella registrazione",
 	"error.noWorkspace": "Nessuna cartella workspace trovata",
 	"error.noExportPath": "Nessun percorso di esportazione specificato",
+	"panic.noActiveRecording": "Nessuna registrazione attiva per il panico",
+	"panic.noRecordingFile": "Nessun file di registrazione trovato per il panico",
+	"panic.emptyFile": "Il file di registrazione è vuoto",
+	"panic.success": "Pulsante panico attivato: Rimossi gli ultimi 10 secondi di registrazione",
+	"panic.successProgressive": "Pulsante panico attivato: Rimossi gli ultimi {seconds} secondi di registrazione",
+	"panic.tooltip": "Pulsante Panico: Elimina gli ultimi 10 secondi di registrazione",
+	"panic.tooltipProgressive": "Pulsante Panico: Elimina gli ultimi {seconds} secondi di registrazione (premi di nuovo entro 3s per eliminare di più)",
 	"view.recordFiles.currentFile": "File corrente"
 }

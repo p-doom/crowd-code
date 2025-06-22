@@ -3,6 +3,7 @@
 	"description": "Record the code in SRT and JSON format",
 	"command.startRecording.title": "crowd-code: Start Recording",
 	"command.stopRecording.title": "crowd-code: Stop Recording",
+	"command.panicButton.title": "crowd-code: Panic Button",
 	"command.openSettings.title": "crowd-code: Open Settings",
 	"command.refreshRecordFiles.title": "Refresh",
 	"command.addToGitignore.title": "Add to .gitignore",
@@ -27,5 +28,12 @@
 	"dialog.enterFolderName.prompt": "Enter a name for the recording folder",
 	"dialog.enterFolderName.placeholder": "Enter recording folder name",
 	"error.noWorkspace": "No workspace folder found",
-	"error.noExportPath": "No export path specified"
+	"error.noExportPath": "No export path specified",
+	"panic.noActiveRecording": "No active recording to panic",
+	"panic.noRecordingFile": "No recording file found to panic",
+	"panic.emptyFile": "Recording file is empty",
+	"panic.success": "Panic button activated: Removed last 10 seconds of recording",
+	"panic.successProgressive": "Panic button activated: Removed last {seconds} seconds of recording",
+	"panic.tooltip": "Panic Button: Delete last 10 seconds of recording",
+	"panic.tooltipProgressive": "Panic Button: Delete last {seconds} seconds of recording (press again within 3s for more)"
 }
