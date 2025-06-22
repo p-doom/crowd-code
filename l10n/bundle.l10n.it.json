@@ -45,5 +45,16 @@
   "view.actions.contextualTitle": "Azioni",
   "Add to .gitignore": "Aggiungi a .gitignore",
   "Export path already in .gitignore": "Percorso di esportazione già in .gitignore",
-  "Error updating .gitignore": "Errore durante l'aggiornamento di .gitignore"
+  "Error updating .gitignore": "Errore durante l'aggiornamento di .gitignore",
+  "Data Collection Consent": "Consenso alla Raccolta Dati",
+	"Data collection consent message": "Questa estensione può raccogliere dati di codifica anonimi per aiutare a migliorare gli strumenti per sviluppatori e la ricerca. I tuoi dati verranno archiviati localmente e potranno essere condivisi con i ricercatori se acconsenti.\n\nQuesti dati includono:\n• I tuoi schemi di codifica e le modifiche ai file\n• L'utilizzo del linguaggio di programmazione\n• La durata delle tue sessioni di codifica\n\nI tuoi dati sono anonimi e non contengono informazioni personali.\n\nDesideri partecipare a questa raccolta dati?",
+	"Consent to data collection": "Sì, acconsento alla raccolta dati",
+	"Decline data collection": "No, archivia i dati solo localmente",
+	"Learn more about data collection": "Scopri di più",
+	"Data collection enabled": "Raccolta dati: Abilitata",
+	"Data collection disabled": "Raccolta dati: Disabilitata",
+	"Data collection pending": "Raccolta dati: In attesa di consenso",
+	"Enable data collection": "Abilita raccolta dati",
+	"Disable data collection": "Disabilita raccolta dati",
+	"Data collection preference updated": "Preferenza raccolta dati aggiornata"
 }

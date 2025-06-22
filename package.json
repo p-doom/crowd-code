@@ -57,6 +57,10 @@
       {
         "command": "vs-code-recorder.showUserId",
         "title": "%command.showUserId.title%"
+      },
+      {
+        "command": "vs-code-recorder.consent",
+        "title": "%command.consent.title%"
       }
     ],
     "viewsContainers": {
@@ -93,6 +97,11 @@
         },
         {
           "command": "vs-code-recorder.addToGitignore",
+          "when": "view == actions",
+          "group": "navigation"
+        },
+        {
+          "command": "vs-code-recorder.consent",
           "when": "view == actions",
           "group": "navigation"
         }

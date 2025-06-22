@@ -13,11 +13,11 @@ import {
 	appendToFile,
 } from './recording'
 import { ChangeType, CSVRowBuilder } from './types'
-import { RecordFilesProvider } from './recordFilesProvider'
-import type { RecordFile } from './recordFilesProvider'
+import { RecordFilesProvider, type RecordFile } from './recordFilesProvider'
 import { ActionsProvider } from './actionsProvider'
 import * as fs from 'node:fs'
 import * as path from 'node:path'
+import { showConsentChangeDialog, ensureConsent, hasConsent } from './consent'
 
 export let statusBarItem: vscode.StatusBarItem
 export let extContext: vscode.ExtensionContext
@@ -65,7 +65,7 @@ async function deleteFileOrFolder(filePath: string): Promise<void> {
 	}
 }
 
-export function activate(context: vscode.ExtensionContext): void {
+export async function activate(context: vscode.ExtensionContext): Promise<void> {
 	extContext = context
 	outputChannel.show()
 	logToOutput(vscode.l10n.t('Activating crowd-code'), 'info')
@@ -175,6 +175,14 @@ export function activate(context: vscode.ExtensionContext): void {
 			await addToGitignore()
 		})
 	)
+
+	// Register consent management command
+	context.subscriptions.push(
+		vscode.commands.registerCommand('vs-code-recorder.consent', async () => {
+			await showConsentChangeDialog()
+		})
+	)
+
 
 	context.subscriptions.push(vscode.workspace.onDidChangeConfiguration(onConfigurationChange))
 
@@ -313,7 +321,12 @@ export function activate(context: vscode.ExtensionContext): void {
 	statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 9000)
 	updateStatusBarItem()
 	context.subscriptions.push(statusBarItem)
-	startRecording().catch(err => logToOutput(`Autostart recording failed unexpectedly: ${err}`, 'error'));
+
+	// Ensure consent is obtained when the extension is first activated
+	await ensureConsent()
+
+	// Autostart recording regardless of consent. The consent only gates data upload.
+	startRecording().catch(err => logToOutput(`Autostart recording failed unexpectedly: ${err}`, 'error'))
 }
 
 export function deactivate(): void {

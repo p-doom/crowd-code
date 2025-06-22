@@ -30,5 +30,16 @@
   "Enter a name for the recording folder": "Enter a name for the recording folder",
   "Add to .gitignore": "Add to .gitignore",
   "Export path already in .gitignore": "Export path already in .gitignore",
-  "Error updating .gitignore": "Error updating .gitignore"
+  "Error updating .gitignore": "Error updating .gitignore",
+  "Data Collection Consent": "Data Collection Consent",
+  "Data collection consent message": "crowd-code can collect anonymous coding data to help improve developer tools and research. Your data will be stored locally and may be shared with researchers if you consent.\n\nThis data includes:\n• Your coding patterns and file changes\n• Programming language usage\n• Timing of your coding sessions\n\nYour data is anonymized and does not contain personal information.\n\nWould you like to participate in this data collection?",
+  "Consent to data collection": "Yes, I consent to data collection",
+  "Decline data collection": "No, store data locally only",
+  "Learn more about data collection": "Learn More",
+  "Data collection enabled": "Data collection: Enabled",
+  "Data collection disabled": "Data collection: Disabled",
+  "Data collection pending": "Data collection: Pending consent",
+  "Enable data collection": "Enable data collection",
+  "Disable data collection": "Disable data collection",
+  "Data collection preference updated": "Data collection preference updated"
 }

@@ -1,9 +1,9 @@
 import * as fs from 'node:fs'
-import * as util from 'node:util'
 import * as path from 'node:path'
 import * as vscode from 'vscode'
 import * as readline from 'node:readline'
-import axios from 'axios';
+import axios from 'axios'
+import { hasConsent, showConsentChangeDialog } from './consent'
 import {
     getEditorFileName,
     escapeString,
@@ -19,7 +19,7 @@ import {
     unescapeString,
     addToGitignore,
 } from './utilities'
-import { type File, ChangeType, type CSVRowBuilder, type Change, type Recording } from './types'
+import { type File, ChangeType, type CSVRowBuilder, type Change, type Recording, type ConsentStatus } from './types'
 import { extContext, statusBarItem, actionsProvider } from './extension'
 
 export const commands = {
@@ -143,6 +143,7 @@ export async function startRecording(): Promise<void> {
         logToOutput(vscode.l10n.t('No active text editor'), 'info')
         return
     }
+    
     if (recording.isRecording) {
         notificationWithProgress(vscode.l10n.t('Already recording'))
         logToOutput(vscode.l10n.t('Already recording'), 'info')
@@ -225,6 +226,11 @@ export async function startRecording(): Promise<void> {
     // Set up a timer to send data to the Lambda endpoint periodically
     uploadIntervalId = setInterval(async () => {
         if (!exportPath) {
+            return;
+        }
+
+        // Only upload data if user has given consent
+        if (!hasConsent()) {
             return;
         }
 
