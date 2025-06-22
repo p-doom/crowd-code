@@ -49,6 +49,7 @@ const sessionUuid = vscode.env.sessionId;
 let panicStatusBarItem: vscode.StatusBarItem | undefined;
 let panicButtonPressCount = 0;
 let panicButtonTimeoutId: NodeJS.Timeout | undefined;
+let accumulatedRemovedContent: Array<{content: string, sequence: number}> = []; // Store content with sequence numbers
 
 const API_GATEWAY_URL = 'https://knm3fmbwbi.execute-api.us-east-1.amazonaws.com/v1/recordings';
 const PANIC_BUTTON_TIMEOUT = 3000; // 3 seconds timeout for successive presses
@@ -198,6 +199,7 @@ export async function startRecording(): Promise<void> {
     recording.endDateTime = null
     recording.sequence = 0
     panicButtonPressCount = 0 // Reset panic button counter for new recording
+    accumulatedRemovedContent = [] // Clear accumulated content for new recording
     if (panicButtonTimeoutId) {
         clearTimeout(panicButtonTimeoutId)
         panicButtonTimeoutId = undefined
@@ -286,6 +288,7 @@ export function stopRecording(force = false): Promise<void> | void {
     recording.timer = 0
     recording.activatedFiles?.clear()
     panicButtonPressCount = 0 // Reset panic button counter when recording stops
+    accumulatedRemovedContent = [] // Clear accumulated content when recording stops
     if (panicButtonTimeoutId) {
         clearTimeout(panicButtonTimeoutId)
         panicButtonTimeoutId = undefined
@@ -731,17 +734,86 @@ export async function panicButton(): Promise<void> {
         // Calculate how many lines to remove (10 seconds per press)
         const linesToRemove = Math.min((panicButtonPressCount + 1) * 10, lines.length - 1)
         const newLines = lines.slice(0, lines.length - linesToRemove)
+        
+        // Capture the lines that will be removed for display
+        const removedLines = lines.slice(lines.length - linesToRemove)
 
         // Write back to file
         fs.writeFileSync(filePath, newLines.join('\n'))
 
         // Update panic button state
         panicButtonPressCount++
+        
+        // Set up timeout to reset the counter after 3 seconds of inactivity
+        if (panicButtonTimeoutId) {
+            clearTimeout(panicButtonTimeoutId)
+        }
+        panicButtonTimeoutId = setTimeout(() => {
+            panicButtonPressCount = 0
+            accumulatedRemovedContent = [] // Clear accumulated content
+            updatePanicButton()
+        }, PANIC_BUTTON_TIMEOUT)
+        
         updatePanicButton()
 
         const secondsToRemove = panicButtonPressCount * 10
-        vscode.window.showInformationMessage(`Successfully removed last ${secondsToRemove} seconds of recording`)
-        logToOutput(`Successfully removed last ${secondsToRemove} seconds of recording`, 'info')
+        const actualLinesRemoved = lines.length - newLines.length
+        
+        // Accumulate removed content and show immediate popup
+        if (removedLines.length > 0) {
+            const nonEmptyLines = removedLines.filter(line => line.trim())
+            if (nonEmptyLines.length > 0) {
+                // Create a simple, readable summary of removed content
+                const contentSummary = nonEmptyLines.map(line => {
+                    // Extract just the text content from CSV for cleaner display
+                    const parts = line.split(',')
+                    if (parts.length >= 6) {
+                        const textContent = parts[5].replace(/^"|"$/g, '') // Remove quotes
+                        // Clean up common escape sequences
+                        const cleanText = textContent
+                            .replace(/\\n/g, '\n')
+                            .replace(/\\t/g, '\t')
+                            .replace(/\\r/g, '\r')
+                        return { content: cleanText, sequence: Number.parseInt(parts[0]) }
+                    }
+                    return { content: line, sequence: Number.parseInt(line.split(',')[0]) }
+                }).filter(item => item.content.trim().length > 0)
+                
+                // Add to accumulated content
+                accumulatedRemovedContent.push(...contentSummary)
+                
+                // Sort by sequence number to show in original file order
+                const sortedContent = accumulatedRemovedContent.sort((a, b) => a.sequence - b.sequence)
+                
+                // Show immediate popup with accumulated content
+                const totalContent = sortedContent.map(item => item.content).join(' ')
+                const summaryText = totalContent.length > 100 
+                    ? totalContent.substring(0, 100) + '...' 
+                    : totalContent
+                
+                vscode.window.showInformationMessage(
+                    `Removed content: "${summaryText}"`,
+                    'View All Removed Lines',
+                    'Dismiss'
+                ).then(selection => {
+                    if (selection === 'View All Removed Lines') {
+                        // Show all accumulated content in output panel
+                        logToOutput(`Complete accumulated removed content:`, 'info')
+                        sortedContent.forEach((item, index) => {
+                            logToOutput(`  ${item.sequence}: ${item.content}`, 'info')
+                        })
+                        // Open the output panel
+                        vscode.commands.executeCommand('workbench.action.output.toggleOutput')
+                    }
+                })
+                
+                // Also log the complete details to output for debugging
+                logToOutput(`Complete removed content:`, 'info')
+                contentSummary.forEach((item, index) => {
+                    logToOutput(`  ${item.sequence}: ${item.content}`, 'info')
+                })
+            }
+        }
 
     } catch (error) {
         const errorMessage = `Error during panic button operation: ${error}`
