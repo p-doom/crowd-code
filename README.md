@@ -25,7 +25,7 @@ We thank Mattia Consiglio for his awesome work on the upstream repository, which
 ![crowd-code Extension](https://raw.githubusercontent.com/mattia-consiglio/vs-code-recorder/main/img/preview.gif)
 
 As soon as the extension activates, recording commences automatically. Recording automatically stops upon IDE closure.
-Additionally, you can control the recording in two ways:
+Additionally, you can control the recording in three ways:
 
 1. Using the status bar (on the right): Click on "Start recording" to begin and "Stop recording" to end.
 2. Using the VS Code Recorder sidebar: Click on the extension icon in the activity bar to open the sidebar, where you can:
@@ -34,6 +34,7 @@ Additionally, you can control the recording in two ways:
    - See the current file being recorded
    - Manage your recorded files
    - Add the export path to .gitignore
+3. Using the panic button: Click on "Panic button" to remove the last few actions from the captured dataset. This is useful to immediately remove sensitive data from the dataset.
 
 The extension will automatically record changes in your text editor. When you stop the recording, it will finalize the data and save it to a CSV (source), JSON and SRT files.
 
@@ -48,6 +49,7 @@ Available commands:
 
 - `vs-code-recorder.startRecording`: Start the recording
 - `vs-code-recorder.stopRecording`: Stop the recording
+- `vs-code-recorder.panicButton`: Remove the last few actions from the dataset
 - `vs-code-recorder.openSettings`: Open the extension settings
 
 ## 📄 Output
