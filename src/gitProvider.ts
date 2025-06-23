@@ -157,7 +157,7 @@ async function getCurrentGitBranchFromCommand(): Promise<string | null> {
         })
         return stdout.trim()
     } catch (error) {
-        console.warn('Error executing git command:', error)
+        logToOutput(`Error executing git command: ${error}`, 'error')
         return null
     }
 }
