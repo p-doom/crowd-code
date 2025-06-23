@@ -2,6 +2,7 @@ import * as vscode from 'vscode'
 import * as fs from 'node:fs'
 import * as path from 'node:path'
 import { contributes } from '../package.json'
+import { tmpdir } from 'node:os'
 
 interface DefaultConfiguration {
 	[key: string]: (typeof defaultConfiguration)[keyof typeof defaultConfiguration]
@@ -73,7 +74,9 @@ export function getExportPath(): string | undefined {
 			)
 		}
 	}
-	if(outputExportPath?.startsWith('/tmp')) {
+	if (outputExportPath?.startsWith('${TMPDIR}')) {
+		const exportDir = tmpdir() ?? "/tmp"
+		outputExportPath = outputExportPath.replace('${TMPDIR}', exportDir)
 		try {
 			if (!fs.existsSync(outputExportPath)) {
 				fs.mkdirSync(outputExportPath, { recursive: true })

@@ -121,7 +121,7 @@
       "properties": {
         "vsCodeRecorder.export.exportPath": {
           "type": "string",
-          "default": "/tmp/crowd-code/",
+          "default": "${TMPDIR}/crowd-code/",
           "markdownDescription": "%config.exportPath.description%",
           "order": 0
         },
