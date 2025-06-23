@@ -81,7 +81,7 @@ async function tryInitializeGitProvider(): Promise<void> {
             )
             
             gitHeadWatcher.onDidChange(() => {
-                console.log('Git HEAD file changed, checking for branch checkout...')
+                logToOutput('Git HEAD file changed, checking for branch checkout...', 'info')
                 setTimeout(() => checkForBranchChanges(), 100) // Small delay to ensure file is written
             })
             
