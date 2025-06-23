@@ -179,7 +179,7 @@ function handleBranchCheckout(newState: LocalGitState, previousState: LocalGitSt
     recording.sequence++
     const checkoutMessage = `Switched from branch '${previousState.branch}' to '${newState.branch}'`
     
-    console.log('Recording git checkout:', checkoutMessage)
+    logToOutput(`Recording git checkout: ${checkoutMessage}`, 'info')
     
     addToFileQueue(
         buildCsvRow({
