@@ -17,6 +17,7 @@ import { ChangeType, CSVRowBuilder } from './types'
 import { RecordFilesProvider } from './recordFilesProvider'
 import type { RecordFile } from './recordFilesProvider'
 import { ActionsProvider } from './actionsProvider'
+import { initializeGitProvider, cleanupGitProvider } from './gitProvider'
 import * as fs from 'node:fs'
 import * as path from 'node:path'
 
@@ -66,7 +67,7 @@ async function deleteFileOrFolder(filePath: string): Promise<void> {
 	}
 }
 
-export function activate(context: vscode.ExtensionContext): void {
+export async function activate(context: vscode.ExtensionContext): Promise<void> {
 	extContext = context
 	outputChannel.show()
 	logToOutput('Activating crowd-code', 'info')
@@ -321,6 +322,9 @@ export function activate(context: vscode.ExtensionContext): void {
 	updateStatusBarItem()
 	context.subscriptions.push(statusBarItem)
 	startRecording().catch(err => logToOutput(`Autostart recording failed unexpectedly: ${err}`, 'error'));
+
+	// Initialize git provider for branch checkout detection
+	initializeGitProvider()
 }
 
 export function deactivate(): void {
@@ -328,5 +332,6 @@ export function deactivate(): void {
 	if (recording.isRecording) {
 		stopRecording()
 	}
+	cleanupGitProvider()
 	statusBarItem.dispose()
 }

@@ -1,8 +1,8 @@
 import * as vscode from 'vscode'
 import * as fs from 'node:fs'
 import * as path from 'node:path'
-import { commands } from './recording'
 import { getConfig } from './utilities'
+import { commands } from './recording'
 
 export class ActionItem extends vscode.TreeItem {
 	constructor(
