@@ -24,7 +24,7 @@ export function initializeGitProvider(): void {
     
     // Try to initialize immediately
     tryInitializeGitProvider().catch(error => {
-        console.warn('Error in initial git provider initialization:', error)
+        logToOutput(`Error in initial git provider initialization: ${error}`, 'error')
     })
     
     // Also try after a delay in case git is not ready yet
