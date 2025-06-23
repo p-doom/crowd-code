@@ -1,6 +1,7 @@
 # ⚫ crowd-code
 
-This extension provides functionality to record IDE actions. Currently supported actions include text insertions, deletions, undo, redo, cursor movement (including VIM motions), file switches, terminal invocation and terminal command execution (both input and output). The changes are recorded in a CSV file and uploaded to an S3 bucket, which we plan to thoroughly clean, process, and eventually share with the community. 
+This extension provides functionality to record IDE actions. Currently supported actions include text insertions, deletions, undo, redo, cursor movement (including VIM motions), file switches, git branch checkouts, terminal invocation and terminal command execution (both input and output). The changes are recorded and stored in CSV files. If you consent to participate in crowd-sourcing VS code actions, the CSV files are uploaded to an S3 bucket. We anonymize and clean the crowd-sourced dataset and periodically share it with the community. If you do not consent, no data will leave your machine, and the CSV files will solely be stored locally.
+This extension provides functionality to record IDE actions. Currently supported actions include text insertions, deletions, undo, redo, cursor movement (including VIM motions), file switches, git branch checkouts, terminal invocation and terminal command execution (both input and output). The changes are recorded in a CSV file and uploaded to an S3 bucket, which we plan to thoroughly clean, process, and eventually share with the community. 
 
 All uncaptured data is lost data. We want to crowd-source a dense dataset of IDE actions to eventually finetune models on. This would (to the best of our knowledge) constitute the first crowd-sourced dataset of dense IDE actions.
 
@@ -11,6 +12,7 @@ We thank Mattia Consiglio for his awesome work on the upstream repository, which
 - [⚫ crowd-code](#-crowd-code)
   - [📚 Table of Contents](#-table-of-contents)
   - [📖 Usage](#-usage)
+  - [🔒 Privacy](#-privacy)
   - [📄 Output](#-output)
   - [▶️ Play it back!](#️-play-it-back)
   - [🔧 Extension Settings](#-extension-settings)
@@ -25,7 +27,7 @@ We thank Mattia Consiglio for his awesome work on the upstream repository, which
 ![crowd-code Extension](https://raw.githubusercontent.com/mattia-consiglio/vs-code-recorder/main/img/preview.gif)
 
 As soon as the extension activates, recording commences automatically. Recording automatically stops upon IDE closure.
-Additionally, you can control the recording in two ways:
+Additionally, you can control the recording in three ways:
 
 1. Using the status bar (on the right): Click on "Start recording" to begin and "Stop recording" to end.
 2. Using the VS Code Recorder sidebar: Click on the extension icon in the activity bar to open the sidebar, where you can:
@@ -34,6 +36,8 @@ Additionally, you can control the recording in two ways:
    - See the current file being recorded
    - Manage your recorded files
    - Add the export path to .gitignore
+   - Enable/disable participation in crowd-sourcing the dataset
+3. Using the panic button: Click on "Panic button" to remove the last few actions from the captured dataset. This is useful to immediately remove sensitive data from the dataset.
 
 The extension will automatically record changes in your text editor. When you stop the recording, it will finalize the data and save it to a CSV (source), JSON and SRT files.
 
@@ -48,7 +52,16 @@ Available commands:
 
 - `crowd-code.startRecording`: Start the recording
 - `crowd-code.stopRecording`: Stop the recording
+- `crowd-code.panicButton`: Remove the last few actions from the dataset
 - `crowd-code.openSettings`: Open the extension settings
+- `crowd-code.consent`: Manage data collection consent
+
+## 🔒 Privacy
+
+We ask for your consent in participating in crowd-sourcing upon installation of the extension. You can always revoke your participation, after which your recorded data will solely be stored on your device.
+
+Your trust means a lot to us, and we will take great care in anonymizing the dataset before sharing it to the research community. At the same time, we strive for ultimate transparency. If you have suggestions on how we can improve our crowd-sourcing setting, we are more than happy to hear your feedback.
+
 
 ## 📄 Output
 

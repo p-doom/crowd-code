@@ -1,9 +1,9 @@
 import * as fs from 'node:fs'
-import * as util from 'node:util'
 import * as path from 'node:path'
 import * as vscode from 'vscode'
 import * as readline from 'node:readline'
-import axios from 'axios';
+import axios from 'axios'
+import { hasConsent, showConsentChangeDialog } from './consent'
 import {
     getEditorFileName,
     escapeString,
@@ -19,13 +19,14 @@ import {
     unescapeString,
     addToGitignore,
 } from './utilities'
-import { type File, ChangeType, type CSVRowBuilder, type Change, type Recording } from './types'
+import { type File, ChangeType, type CSVRowBuilder, type Change, type Recording, type ConsentStatus } from './types'
 import { extContext, statusBarItem, actionsProvider } from './extension'
 
 export const commands = {
     openSettings: 'crowd-code.openSettings',
     startRecording: 'crowd-code.startRecording',
     stopRecording: 'crowd-code.stopRecording',
+    panicButton: 'crowd-code.panicButton',
 }
 
 export const recording: Recording = {
@@ -45,8 +46,13 @@ let isAppending = false
 let uploadIntervalId: NodeJS.Timeout;
 const sessionUuid = vscode.env.sessionId;
 
-const API_GATEWAY_URL = 'https://knm3fmbwbi.execute-api.us-east-1.amazonaws.com/v1/recordings';
+let panicStatusBarItem: vscode.StatusBarItem | undefined;
+let panicButtonPressCount = 0;
+let panicButtonTimeoutId: NodeJS.Timeout | undefined;
+let accumulatedRemovedContent: Array<{content: string, sequence: number}> = []; // Store content with sequence numbers
 
+const API_GATEWAY_URL = 'https://knm3fmbwbi.execute-api.us-east-1.amazonaws.com/v1/recordings';
+const PANIC_BUTTON_TIMEOUT = 3000; // 3 seconds timeout for successive presses
 
 /**
  * Builds a CSV row with the given parameters.
@@ -138,14 +144,9 @@ function createRecordingFolder(folderPath: string): void {
  * Starts the recording process and initializes necessary variables.
  */
 export async function startRecording(): Promise<void> {
-    if (!vscode.window.activeTextEditor) {
-        vscode.window.showErrorMessage(vscode.l10n.t('No active text editor'))
-        logToOutput(vscode.l10n.t('No active text editor'), 'info')
-        return
-    }
     if (recording.isRecording) {
-        notificationWithProgress(vscode.l10n.t('Already recording'))
-        logToOutput(vscode.l10n.t('Already recording'), 'info')
+        notificationWithProgress('Already recording')
+        logToOutput('Already recording', 'info')
         return
     }
     const exportPath = getExportPath()
@@ -168,8 +169,8 @@ export async function startRecording(): Promise<void> {
     let customFolderName: string | undefined
     if (getConfig().get('recording.askFolderName')) {
         customFolderName = await vscode.window.showInputBox({
-            prompt: vscode.l10n.t('Enter a name for the recording folder'),
-            placeHolder: vscode.l10n.t('Enter recording folder name'),
+            prompt: 'Enter a name for the recording folder',
+            placeHolder: 'Enter recording folder name',
         })
         if (!customFolderName) {
             stopRecording(true)
@@ -192,13 +193,20 @@ export async function startRecording(): Promise<void> {
     recording.timer = 0
     recording.endDateTime = null
     recording.sequence = 0
+    panicButtonPressCount = 0 // Reset panic button counter for new recording
+    accumulatedRemovedContent = [] // Clear accumulated content for new recording
+    if (panicButtonTimeoutId) {
+        clearTimeout(panicButtonTimeoutId)
+        panicButtonTimeoutId = undefined
+    }
     intervalId = setInterval(() => {
         recording.timer++
         updateStatusBarItem()
     }, 1000)
-    notificationWithProgress(vscode.l10n.t('Recording started'))
-    logToOutput(vscode.l10n.t('Recording started'), 'info')
+    notificationWithProgress('Recording started')
+    logToOutput('Recording started', 'info')
 
+    // Only log initial editor content if there's an active text editor
     const editorText = vscode.window.activeTextEditor?.document.getText()
     const activeEditorUri = vscode.window.activeTextEditor?.document.uri.toString()
 
@@ -215,16 +223,33 @@ export async function startRecording(): Promise<void> {
         addToFileQueue(buildCsvRow(csvRow))
         appendToFile()
         recording.activatedFiles.add(activeEditorUri)
-        actionsProvider.setCurrentFile(vscode.window.activeTextEditor.document.fileName)
+        actionsProvider.setCurrentFile(vscode.window.activeTextEditor?.document.fileName || '')
+    } else {
+        // If no active editor, just add the header row
+        recording.sequence++
+        addToFileQueue(buildCsvRow({ 
+            sequence: recording.sequence,
+            rangeOffset: 0,
+            rangeLength: 0,
+            text: '',
+            type: ChangeType.HEADING 
+        }))
+        appendToFile()
     }
 
     extContext.subscriptions.push(onChangeSubscription)
     updateStatusBarItem()
+    updatePanicButton()
     actionsProvider.setRecordingState(true)
 
     // Set up a timer to send data to the Lambda endpoint periodically
     uploadIntervalId = setInterval(async () => {
         if (!exportPath) {
+            return;
+        }
+
+        // Only upload data if user has given consent
+        if (!hasConsent()) {
             return;
         }
 
@@ -265,7 +290,7 @@ export async function startRecording(): Promise<void> {
  */
 export function stopRecording(force = false): Promise<void> | void {
     if (!recording.isRecording) {
-        notificationWithProgress(vscode.l10n.t('Not recording'))
+        notificationWithProgress('Not recording')
         return
     }
 
@@ -274,26 +299,33 @@ export function stopRecording(force = false): Promise<void> | void {
     clearInterval(uploadIntervalId); // Clear the upload timer
     recording.timer = 0
     recording.activatedFiles?.clear()
+    panicButtonPressCount = 0 // Reset panic button counter when recording stops
+    accumulatedRemovedContent = [] // Clear accumulated content when recording stops
+    if (panicButtonTimeoutId) {
+        clearTimeout(panicButtonTimeoutId)
+        panicButtonTimeoutId = undefined
+    }
     const index = extContext.subscriptions.indexOf(onChangeSubscription)
     if (index !== -1) {
         extContext.subscriptions.splice(index, 1)
     }
     updateStatusBarItem()
+    updatePanicButton()
     actionsProvider.setRecordingState(false)
     if (force) {
-        notificationWithProgress(vscode.l10n.t('Recording cancelled'))
-        logToOutput(vscode.l10n.t('Recording cancelled'), 'info')
+        notificationWithProgress('Recording cancelled')
+        logToOutput('Recording cancelled', 'info')
         recording.customFolderName = undefined
         return
     }
-    notificationWithProgress(vscode.l10n.t('Recording finished'))
-    logToOutput(vscode.l10n.t('Recording finished'), 'info')
+    notificationWithProgress('Recording finished')
+    logToOutput('Recording finished', 'info')
     recording.endDateTime = new Date()
     return processCsvFile().then(() => {
         // Reset customFolderName after processing is complete
         recording.customFolderName = undefined
     }).catch(err => {
-        logToOutput(vscode.l10n.t('Error processing CSV file during stop: {0}', String(err)), 'error')
+        logToOutput(`Error processing CSV file during stop: ${String(err)}`, 'error')
         recording.customFolderName = undefined
     });
 }
@@ -467,8 +499,8 @@ async function processCsvFile(): Promise<void> {
 
     const exportFormats = getConfig().get<string[]>('export.exportFormats', [])
     if (exportFormats.length === 0) {
-        logToOutput(vscode.l10n.t('No export formats specified'), 'info')
-        vscode.window.showWarningMessage(vscode.l10n.t('No export formats specified'))
+        logToOutput('No export formats specified', 'info')
+        vscode.window.showWarningMessage('No export formats specified')
         return
     }
 
@@ -527,7 +559,7 @@ async function processCsvFile(): Promise<void> {
 
     } catch (err) {
         vscode.window.showErrorMessage(`Error processing recording: ${err}`)
-        logToOutput(vscode.l10n.t('Error processing CSV file: {0}', String(err)), 'error')
+        logToOutput('Error processing CSV file: ' + String(err), 'error')
         return Promise.resolve(); // Resolve even on error after showing message
     }
 }
@@ -535,15 +567,13 @@ async function processCsvFile(): Promise<void> {
 function validateRecordingState(): boolean {
     if (!vscode.workspace.workspaceFolders) {
         logToOutput(
-            vscode.l10n.t(
-                'No workspace folder found. To process the recording is needed a workspace folder'
-            ),
+            'No workspace folder found. To process the recording is needed a workspace folder',
             'error'
         )
         return false
     }
     if (!recording.endDateTime || !recording.startDateTime) {
-        logToOutput(vscode.l10n.t('Recording date time is not properly set'), 'error')
+        logToOutput('Recording date time is not properly set', 'error')
         return false
     }
     return true
@@ -609,29 +639,181 @@ export function addToFileQueue(
  * Updates the status bar item with the current recording status and time.
  */
 export function updateStatusBarItem(): void {
-    const editor = vscode.window.activeTextEditor
-    if (!editor && !recording) {
-        statusBarItem.hide()
-        return
-    }
     if (recording.isRecording) {
         if (getConfig().get('appearance.showTimer') === false) {
             statusBarItem.text = '$(debug-stop)'
-            statusBarItem.tooltip = vscode.l10n.t('Current time: {0}', formatDisplayTime(recording.timer))
+            statusBarItem.tooltip = 'Current time: ' + formatDisplayTime(recording.timer)
         }
         if (getConfig().get('appearance.showTimer') === true) {
-            statusBarItem.text = `$(debug-stop) ${formatDisplayTime(recording.timer)}`
-            statusBarItem.tooltip = vscode.l10n.t('Stop Recording')
+            statusBarItem.text = '$(debug-stop) ' + formatDisplayTime(recording.timer)
+            statusBarItem.tooltip = 'Stop Recording'
         }
         statusBarItem.command = commands.stopRecording
+        statusBarItem.show()
     } else {
+        const editor = vscode.window.activeTextEditor
+        if (!editor) {
+            statusBarItem.hide()
+            return
+        }
         if (getConfig().get('appearance.minimalMode') === true) {
             statusBarItem.text = '$(circle-large-filled)'
         } else {
-            statusBarItem.text = `$(circle-large-filled) ${vscode.l10n.t('Start Recording')}`
+            statusBarItem.text = '$(circle-large-filled) Start Recording'
         }
-        statusBarItem.tooltip = vscode.l10n.t('Start Recording')
+        statusBarItem.tooltip = 'Start Recording'
         statusBarItem.command = commands.startRecording
+        statusBarItem.show()
     }
-    statusBarItem.show()
+}
+
+/**
+ * Creates and updates the panic button status bar item.
+ */
+export function updatePanicButton(): void {
+    if (!recording.isRecording) {
+        if (panicStatusBarItem) {
+            panicStatusBarItem.hide()
+        }
+        return
+    }
+
+    // Create panic button if it doesn't exist
+    if (!panicStatusBarItem) {
+        panicStatusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 8999) // Position it to the left of the recording button
+        extContext.subscriptions.push(panicStatusBarItem)
+    }
+
+    const secondsToRemove = (panicButtonPressCount + 1) * 10 // Show what the next press will remove
+    panicStatusBarItem.text = '$(refresh)'
+    panicStatusBarItem.tooltip = `Remove last ${secondsToRemove} seconds of recording (click again within 3 seconds to remove more)`
+    panicStatusBarItem.command = commands.panicButton
+    panicStatusBarItem.show()
+}
+
+/**
+ * Deletes the last N seconds of recording data from the CSV file.
+ * This is a "panic button" feature that allows users to quickly remove recent sensitive data.
+ * Each successive press within 3 seconds removes more time: 10s, 20s, 30s, etc.
+ * After 3 seconds of inactivity, the next press will be treated as a fresh press (10s).
+ */
+export async function panicButton(): Promise<void> {
+    if (!recording.isRecording) {
+        vscode.window.showWarningMessage('No active recording to remove data from')
+        logToOutput('No active recording to remove data from', 'info')
+        return
+    }
+
+    if (!recording.startDateTime) {
+        vscode.window.showErrorMessage('Recording start time not available')
+        logToOutput('Recording start time not available', 'error')
+        return
+    }
+
+    const exportPath = getExportPath()
+    if (!exportPath) {
+        vscode.window.showErrorMessage('Export path not available')
+        logToOutput('Export path not available', 'error')
+        return
+    }
+
+    const baseFilePath = generateBaseFilePath(recording.startDateTime, false, recording.customFolderName, sessionUuid)
+    if (!baseFilePath) {
+        vscode.window.showErrorMessage('Could not generate file path')
+        logToOutput('Could not generate file path', 'error')
+        return
+    }
+
+    const filePath = path.join(exportPath, `${baseFilePath}.csv`)
+
+    try {
+        // Check if file exists
+        if (!fs.existsSync(filePath)) {
+            vscode.window.showWarningMessage('No recording file found to remove data from')
+            logToOutput('No recording file found to remove data from', 'info')
+            return
+        }
+
+        // Read the file
+        const content = fs.readFileSync(filePath, 'utf-8')
+        const lines = content.split('\n')
+        
+        if (lines.length <= 1) {
+            vscode.window.showWarningMessage('Recording file is empty, nothing to remove')
+            logToOutput('Recording file is empty, nothing to remove', 'info')
+            return
+        }
+
+        // Calculate how many lines to remove (10 seconds per press)
+        const linesToRemove = Math.min((panicButtonPressCount + 1) * 10, lines.length - 1)
+        const newLines = lines.slice(0, lines.length - linesToRemove)
+        
+        // Capture the lines that will be removed for display
+        const removedLines = lines.slice(lines.length - linesToRemove)
+
+        // Write back to file
+        fs.writeFileSync(filePath, newLines.join('\n'))
+
+        // Update panic button state
+        panicButtonPressCount++
+        
+        // Set up timeout to reset the counter after 3 seconds of inactivity
+        if (panicButtonTimeoutId) {
+            clearTimeout(panicButtonTimeoutId)
+        }
+        panicButtonTimeoutId = setTimeout(() => {
+            panicButtonPressCount = 0
+            accumulatedRemovedContent = [] // Clear accumulated content
+            updatePanicButton()
+        }, PANIC_BUTTON_TIMEOUT)
+        
+        updatePanicButton()
+
+        const secondsToRemove = panicButtonPressCount * 10
+        const actualLinesRemoved = lines.length - newLines.length
+        
+        // Accumulate removed content and show immediate popup
+        if (removedLines.length > 0) {
+            const nonEmptyLines = removedLines.filter(line => line.trim())
+            if (nonEmptyLines.length > 0) {
+                // Create a simple, readable summary of removed content
+                const contentSummary = nonEmptyLines.map(line => {
+                    // Extract just the text content from CSV for cleaner display
+                    const parts = line.split(',')
+                    if (parts.length >= 6) {
+                        const textContent = parts[5].replace(/^"|"$/g, '') // Remove quotes
+                        // Clean up common escape sequences
+                        const cleanText = textContent
+                            .replace(/\\n/g, '\n')
+                            .replace(/\\t/g, '\t')
+                            .replace(/\\r/g, '\r')
+                        return { content: cleanText, sequence: Number.parseInt(parts[0]) }
+                    }
+                    return { content: line, sequence: Number.parseInt(line.split(',')[0]) }
+                }).filter(item => item.content.trim().length > 0)
+                
+                // Add to accumulated content
+                accumulatedRemovedContent.push(...contentSummary)
+                
+                // Sort by sequence number to show in original file order
+                const sortedContent = accumulatedRemovedContent.sort((a, b) => a.sequence - b.sequence)
+                
+                // Show immediate popup with accumulated content
+                const totalContent = sortedContent.map(item => item.content).join(' ')
+                const summaryText = totalContent.length > 100 
+                    ? totalContent.substring(0, 100) + '...' 
+                    : totalContent
+                
+                vscode.window.showInformationMessage(
+                    `Removed content: "${summaryText}"`,
+                    'Dismiss'
+                )
+            }
+        }
+
+    } catch (error) {
+        const errorMessage = `Error during panic button operation: ${error}`
+        vscode.window.showErrorMessage(errorMessage)
+        logToOutput(errorMessage, 'error')
+    }
 }

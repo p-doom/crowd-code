@@ -1,7 +1,7 @@
 {
   "name": "crowd-code",
-  "displayName": "%displayName%",
-  "description": "%description%",
+  "displayName": "crowd-code",
+  "description": "Record your code editing activity in VS Code",
   "version": "1.1.3",
   "publisher": "pdoom-org",
   "icon": "icon.png",
@@ -16,47 +16,55 @@
   "activationEvents": [
     "onStartupFinished"
   ],
-  "l10n": "./l10n",
   "contributes": {
     "commands": [
       {
         "command": "crowd-code.startRecording",
-        "title": "%command.startRecording.title%",
+        "title": "Start Recording",
         "icon": "$(play)"
       },
       {
         "command": "crowd-code.stopRecording",
-        "title": "%command.stopRecording.title%",
+        "title": "Stop Recording",
         "icon": "$(stop)"
       },
       {
+        "command": "crowd-code.panicButton",
+        "title": "Panic Button",
+        "icon": "$(refresh)"
+      },
+      {
         "command": "crowd-code.openSettings",
-        "title": "%command.openSettings.title%",
+        "title": "Open Settings",
         "icon": "$(settings)"
       },
       {
         "command": "crowd-code.refreshRecordFiles",
-        "title": "%command.refreshRecordFiles.title%",
+        "title": "Refresh",
         "icon": "$(refresh)"
       },
       {
         "command": "crowd-code.deleteRecordFile",
-        "title": "%command.deleteRecordFile.title%",
+        "title": "Delete",
         "icon": "$(trash)"
       },
       {
         "command": "crowd-code.revealInExplorer",
-        "title": "%command.revealInExplorer.title%",
+        "title": "Reveal in File Explorer",
         "icon": "$(folder-opened)"
       },
       {
         "command": "crowd-code.addToGitignore",
-        "title": "%command.addToGitignore.title%",
+        "title": "Add to .gitignore",
         "icon": "$(git-ignore)"
       },
       {
         "command": "crowd-code.showUserId",
-        "title": "%command.showUserId.title%"
+        "title": "Show User ID"
+      },
+      {
+        "command": "crowd-code.consent",
+        "title": "crowd-code: Manage Data Collection Consent"
       }
     ],
     "viewsContainers": {
@@ -72,15 +80,15 @@
       "crowd-code": [
         {
           "id": "actions",
-          "name": "%view.actions.name%",
+          "name": "Actions",
           "icon": "icon.svg",
-          "contextualTitle": "%view.actions.contextualTitle%"
+          "contextualTitle": "Actions"
         },
         {
           "id": "recordFiles",
-          "name": "%view.recordFiles.name%",
+          "name": "Record Files",
           "icon": "icon.svg",
-          "contextualTitle": "%view.recordFiles.contextualTitle%"
+          "contextualTitle": "Record Files"
         }
       ]
     },
@@ -92,7 +100,12 @@
           "group": "navigation"
         },
         {
-          "command": "vs-code-recorder.addToGitignore",
+          "command": "crowd-code.addToGitignore",
+          "when": "view == actions",
+          "group": "navigation"
+        },
+        {
+          "command": "crowd-code.consent",
           "when": "view == actions",
           "group": "navigation"
         }
@@ -121,24 +134,24 @@
       ]
     },
     "configuration": {
-      "title": "%config.title%",
+      "title": "crowd-code Configuration",
       "properties": {
         "crowdCode.export.exportPath": {
           "type": "string",
           "default": "${TMPDIR}/crowd-code/",
-          "markdownDescription": "%config.exportPath.description%",
+          "markdownDescription": "Path where recordings will be exported. Use '${workspaceFolder}' to refer to the workspace folder.",
           "order": 0
         },
         "crowdCode.export.createPathOutsideWorkspace": {
           "type": "boolean",
           "default": true,
-          "description": "%config.createPathOutsideWorkspace.description%",
+          "description": "Whether to create the export path if it doesn't exist, even if it's outside the workspace folder.",
           "order": 1
         },
         "crowdCode.export.addToGitignore": {
           "type": "boolean",
           "default": false,
-          "description": "%config.addToGitignore.description%",
+          "description": "Whether to add the export path to .gitignore when creating it.",
           "order": 2
         },
         "crowdCode.export.exportFormats": {
@@ -155,25 +168,25 @@
             "JSON",
             "SRT"
           ],
-          "description": "%config.exportFormats.description%",
+          "description": "Formats to export the recording in.",
           "order": 3
         },
         "crowdCode.recording.askFolderName": {
           "type": "boolean",
           "default": false,
-          "description": "%config.askFolderName.description%",
+          "description": "Ask for a custom folder name before starting a recording",
           "order": 4
         },
         "crowdCode.appearance.minimalMode": {
           "type": "boolean",
           "default": false,
-          "description": "%config.minimalMode.description%",
+          "description": "Whether to show only the icon in the status bar when recording is stopped.",
           "order": 5
         },
         "crowdCode.appearance.showTimer": {
           "type": "boolean",
           "default": true,
-          "description": "%config.showTimer.description%",
+          "description": "Whether to show the timer in the status bar when recording.",
           "order": 6
         }
       }
@@ -211,7 +224,6 @@
     "webpack-cli": "^5.1.4"
   },
   "dependencies": {
-    "@vscode/l10n": "^0.0.18",
     "axios": "^1.7.2"
   }
 }
