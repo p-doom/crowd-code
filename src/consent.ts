@@ -29,12 +29,12 @@ export function hasConsent(): boolean {
  * Shows the consent dialog to the user
  */
 export async function showConsentDialog(): Promise<boolean> {
-    const consentItem: vscode.MessageItem = { title: vscode.l10n.t('Consent to data collection') }
-    const declineItem: vscode.MessageItem = { title: vscode.l10n.t('Decline data collection'), isCloseAffordance: true }
-    const learnMoreItem: vscode.MessageItem = { title: vscode.l10n.t('Learn more about data collection') }
+    const consentItem: vscode.MessageItem = { title: 'Consent to data collection' }
+    const declineItem: vscode.MessageItem = { title: 'Decline data collection', isCloseAffordance: true }
+    const learnMoreItem: vscode.MessageItem = { title: 'Learn more about data collection' }
 
     const result = await vscode.window.showInformationMessage(
-        vscode.l10n.t('crowd-code collects anonymized usage data for research purposes. Your personal information is not collected, and the data is thoroughly anonymized before being shared with researchers. Do you consent to data collection?'),
+        'crowd-code collects anonymized usage data for research purposes. Your personal information is not collected, and the data is thoroughly anonymized before being shared with researchers. Do you consent to data collection?',
         { modal: true },
         consentItem,
         declineItem,
@@ -43,7 +43,7 @@ export async function showConsentDialog(): Promise<boolean> {
 
     if (result === consentItem) {
         setConsentStatus('accepted')
-        vscode.window.showInformationMessage(vscode.l10n.t('Thank you for your contribution! Data collection is now enabled. You can change this setting at any time.'))
+        vscode.window.showInformationMessage('Thank you for your contribution! Data collection is now enabled. You can change this setting at any time.')
         return true
     } else if (result === declineItem) {
         setConsentStatus('declined')
@@ -73,23 +73,23 @@ export async function showConsentChangeDialog(): Promise<void> {
     }
 
     const currentStatusText = currentStatus === 'accepted' 
-        ? vscode.l10n.t('Data collection enabled')
-        : vscode.l10n.t('Data collection disabled')
+        ? 'Data collection enabled'
+        : 'Data collection disabled'
 
     const changeAction = currentStatus === 'accepted'
-        ? vscode.l10n.t('Disable data collection')
-        : vscode.l10n.t('Enable data collection')
+        ? 'Disable data collection'
+        : 'Enable data collection'
 
     const result = await vscode.window.showInformationMessage(
         currentStatusText,
         changeAction,
-        vscode.l10n.t('Cancel')
+        'Cancel'
     )
 
     if (result === changeAction) {
         const newStatus: ConsentStatus = currentStatus === 'accepted' ? 'declined' : 'accepted'
         setConsentStatus(newStatus)
-        vscode.window.showInformationMessage(vscode.l10n.t('Data collection preference updated'))
+        vscode.window.showInformationMessage('Data collection preference updated')
     }
 }
 
@@ -114,11 +114,11 @@ export function getConsentStatusMessage(): string {
     const status = getConsentStatus()
     switch (status) {
         case 'accepted':
-            return vscode.l10n.t('Data collection enabled')
+            return 'Data collection enabled'
         case 'declined':
-            return vscode.l10n.t('Data collection disabled')
+            return 'Data collection disabled'
         case 'pending':
         default:
-            return vscode.l10n.t('Data collection pending')
+            return 'Data collection pending'
     }
 } 
