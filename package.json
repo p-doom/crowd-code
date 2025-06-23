@@ -61,6 +61,10 @@
       {
         "command": "crowd-code.showUserId",
         "title": "Show User ID"
+      },
+      {
+        "command": "crowd-code.consent",
+        "title": "crowd-code: Manage Data Collection Consent"
       }
     ],
     "viewsContainers": {
@@ -96,7 +100,12 @@
           "group": "navigation"
         },
         {
-          "command": "vs-code-recorder.addToGitignore",
+          "command": "crowd-code.addToGitignore",
+          "when": "view == actions",
+          "group": "navigation"
+        },
+        {
+          "command": "crowd-code.consent",
           "when": "view == actions",
           "group": "navigation"
         }
@@ -208,7 +217,6 @@
     "@vscode/l10n-dev": "^0.0.35",
     "@vscode/test-cli": "^0.0.9",
     "@vscode/test-electron": "^2.4.0",
-    "copy-webpack-plugin": "^13.0.0",
     "eslint": "^8.57.0",
     "ts-loader": "^9.5.1",
     "typescript": "^5.4.5",

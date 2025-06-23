@@ -1,3 +1,5 @@
+export type ConsentStatus = 'pending' | 'accepted' | 'declined'
+
 export interface File {
 	name: string
 	content: string

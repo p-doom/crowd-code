@@ -2,6 +2,7 @@ import * as vscode from 'vscode'
 import * as fs from 'node:fs'
 import * as path from 'node:path'
 import { getConfig } from './utilities'
+import { getConsentStatusMessage } from './consent'
 import { commands } from './recording'
 
 export class ActionItem extends vscode.TreeItem {
@@ -174,6 +175,18 @@ export class ActionsProvider implements vscode.TreeDataProvider<ActionItem> {
 			)
 			items.push(addToGitignoreButton)
 		}
+
+		// Data collection consent status and management
+		const consentStatus = new ActionItem(
+			getConsentStatusMessage(),
+			vscode.TreeItemCollapsibleState.None,
+			{
+				command: 'crowd-code.consent',
+				title: 'Manage Data Collection Consent',
+			},
+			'shield'
+		)
+		items.push(consentStatus)
 
 		return items
 	}
