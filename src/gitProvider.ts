@@ -167,7 +167,7 @@ async function getCurrentGitBranchFromCommand(): Promise<string | null> {
  */
 function handleBranchCheckout(newState: LocalGitState, previousState: LocalGitState): void {
     if (!recording.isRecording) {
-        console.log('Not recording, skipping git checkout event')
+        logToOutput('Not recording, skipping git checkout event', 'info')
         return
     }
 
