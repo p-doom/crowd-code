@@ -164,7 +164,7 @@ export function logToOutput(message: string, type: 'info' | 'success' | 'error' 
  * @param customName - Optional custom name for the folder.
  * @returns The generated file name.
  */
-export function generateFileName(
+export function generateBaseFilePath(
 	date: Date | null,
 	isExport = false,
 	customName?: string, 

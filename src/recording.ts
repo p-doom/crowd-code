@@ -9,7 +9,7 @@ import {
     escapeString,
     getEditorLanguage,
     notificationWithProgress,
-    generateFileName,
+    generateBaseFilePath,
     formatDisplayTime,
     getExportPath,
     logToOutput,
@@ -177,14 +177,14 @@ export async function startRecording(): Promise<void> {
         recording.customFolderName = customFolderName
     }
 
-    const fileName = generateFileName(recording.startDateTime, false, recording.customFolderName, sessionUuid)
-    if (!fileName) {
+    const baseFilePath = generateBaseFilePath(recording.startDateTime, false, recording.customFolderName, sessionUuid)
+    if (!baseFilePath) {
         stopRecording(true)
         return
     }
 
     // Create the recording folder
-    const folderPath = path.dirname(path.join(exportPath, fileName))
+    const folderPath = path.dirname(path.join(exportPath, baseFilePath))
     createRecordingFolder(folderPath)
 
     recording.isRecording = true
@@ -232,14 +232,14 @@ export async function startRecording(): Promise<void> {
             return;
         }
 
-        const filePath = path.join(exportPath, `${fileName}.csv`);
+        const filePath = path.join(exportPath, `${baseFilePath}.csv`);
 
         try {
             const fileContent = await fs.promises.readFile(filePath, 'utf-8');
 
             if (fileContent) {
                 const payload = {
-                    fileName: `${fileName}.csv`,
+                    fileName: `${baseFilePath}.csv`,
                     content: fileContent
                 };
                 await axios.post(CROWD_CODE_API_GATEWAY_URL, payload);
@@ -482,17 +482,17 @@ async function processCsvFile(): Promise<void> {
     }
 
     // Use the same custom folder name for reading the source file
-    const sourceFileName = generateFileName(
+    const baseFilePathSource = generateBaseFilePath(
         recording.startDateTime,
         false,
         recording.customFolderName,
         sessionUuid
     )
-    if (!sourceFileName) {
+    if (!baseFilePathSource) {
         return
     }
 
-    const filePath = path.join(exportPath, `${sourceFileName}.csv`)
+    const filePath = path.join(exportPath, `${baseFilePathSource}.csv`)
 
     try {
         if (!fs.existsSync(filePath)) {
@@ -595,12 +595,12 @@ export function addToFileQueue(
         return
     }
     // Use the same custom name throughout the recording session
-    const fileName = generateFileName(recording.startDateTime, isExport, recording.customFolderName, sessionUuid)
-    if (!fileName) {
+    const baseFilePath = generateBaseFilePath(recording.startDateTime, isExport, recording.customFolderName, sessionUuid)
+    if (!baseFilePath) {
         return
     }
     fileQueue.push({
-        name: `${fileName}.${fileExtension}`,
+        name: `${baseFilePath}.${fileExtension}`,
         content: content,
     })
 }
