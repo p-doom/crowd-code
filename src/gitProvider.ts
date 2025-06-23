@@ -193,7 +193,7 @@ function handleBranchCheckout(newState: LocalGitState, previousState: LocalGitSt
     appendToFile()
     
     // Reset the file cache since files might have different content on the new branch
-    console.log('Resetting file cache due to branch checkout')
+    logToOutput('Resetting file cache due to branch checkout', 'info')
     if (recording.activatedFiles) {
         recording.activatedFiles.clear()
     }
