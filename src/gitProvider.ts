@@ -92,7 +92,7 @@ async function tryInitializeGitProvider(): Promise<void> {
         }
         
     } catch (error) {
-        console.warn('Error initializing git provider:', error)
+        logToOutput(`Error initializing git provider: ${error}`, 'error')
     }
 }
 
