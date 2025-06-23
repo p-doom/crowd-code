@@ -131,7 +131,7 @@ function updateGitState(): void {
             const repository = workspaceFolder?.uri.fsPath || 'unknown'
             
             const newState = { branch: branchName, repository }
-            console.log('Initial git state:', newState)
+            logToOutput(`Initial git state: ${newState}`, 'info')
             
             lastKnownBranch = branchName
             currentGitState = newState
