@@ -23,13 +23,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- include userId (hashed) and extension version as metadata when sending CSVs
-- a new command to display the userId in the command palette for the user.
+- Include userId (hashed) and extension version as metadata when uploading CSVs
+- A new command to display the userId in the command palette for the user
+- New Github Release workflow
+- Capture git checkouts as IDE action
+- Panic-button to immediately remove sensitive data
+- Ask for user consent on extension installation
 
 ### Changed
 
-- user friendly upload to s3 through api gateway and lambda
-- export path defaulting to `/tmp` when none is specified by the user, ensuring a valid export location is always available and NOT in the user's workspace
+- User-friendly upload to S3 through API Gateway and Lambda functions
+- Export path defaulting to `$TMPDIR` when none is specified by the user, ensuring a valid export location is always available and NOT in the user's workspace
+- Autostart even if non-editable pane is focused
 
 ## 1.1.2
 
