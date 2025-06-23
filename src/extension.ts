@@ -11,10 +11,12 @@ import {
 	addToFileQueue,
 	buildCsvRow,
 	appendToFile,
+	panicButton,
 } from './recording'
 import { ChangeType, CSVRowBuilder } from './types'
 import { RecordFilesProvider, type RecordFile } from './recordFilesProvider'
 import { ActionsProvider } from './actionsProvider'
+import { initializeGitProvider, cleanupGitProvider } from './gitProvider'
 import * as fs from 'node:fs'
 import * as path from 'node:path'
 import { showConsentChangeDialog, ensureConsent, hasConsent } from './consent'
@@ -24,7 +26,7 @@ export let extContext: vscode.ExtensionContext
 export let actionsProvider: ActionsProvider
 
 function onConfigurationChange(event: vscode.ConfigurationChangeEvent) {
-	if (event.affectsConfiguration('vsCodeRecorder')) {
+	if (event.affectsConfiguration('crowdCode')) {
 		updateStatusBarItem()
 		getExportPath()
 	}
@@ -68,7 +70,7 @@ async function deleteFileOrFolder(filePath: string): Promise<void> {
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
 	extContext = context
 	outputChannel.show()
-	logToOutput(vscode.l10n.t('Activating crowd-code'), 'info')
+	logToOutput('Activating crowd-code', 'info')
 
 	// Save anonUserId globally for user to copy
 	const userName = process.env.USER || process.env.USERNAME || "coder";
@@ -80,7 +82,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
 	// Register userID display
 	context.subscriptions.push(
-		vscode.commands.registerCommand('vs-code-recorder.showUserId', () => {
+		vscode.commands.registerCommand('crowd-code.showUserId', () => {
 			const userId = extContext.globalState.get<string>('userId');
 			if (!userId) {
 				vscode.window.showWarningMessage("User ID not registered yet. Please wait a few seconds until the extension is fully activated.");
@@ -102,7 +104,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
 	// Register refresh command
 	context.subscriptions.push(
-		vscode.commands.registerCommand('vs-code-recorder.refreshRecordFiles', () => {
+		vscode.commands.registerCommand('crowd-code.refreshRecordFiles', () => {
 			recordFilesProvider.refresh()
 		})
 	)
@@ -110,7 +112,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 	// Register delete command
 	context.subscriptions.push(
 		vscode.commands.registerCommand(
-			'vs-code-recorder.deleteRecordFile',
+			'crowd-code.deleteRecordFile',
 			async (item: RecordFile) => {
 				const exportPath = getExportPath()
 				if (!exportPath) {
@@ -118,12 +120,12 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 				}
 
 				const result = await vscode.window.showWarningMessage(
-					vscode.l10n.t('Are you sure you want to delete {name}?', { name: item.label }),
-					vscode.l10n.t('Yes'),
-					vscode.l10n.t('No')
+					`Are you sure you want to delete ${item.label}?`,
+					'Yes',
+					'No'
 				)
 
-				if (result === vscode.l10n.t('Yes')) {
+				if (result === 'Yes') {
 					try {
 						const itemPath = getFullPath(item, exportPath)
 						await deleteFileOrFolder(itemPath)
@@ -138,7 +140,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
 	// Register reveal in explorer command
 	context.subscriptions.push(
-		vscode.commands.registerCommand('vs-code-recorder.revealInExplorer', (item: RecordFile) => {
+		vscode.commands.registerCommand('crowd-code.revealInExplorer', (item: RecordFile) => {
 			const exportPath = getExportPath()
 			if (!exportPath) {
 				return
@@ -162,16 +164,22 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 	)
 
 	context.subscriptions.push(
+		vscode.commands.registerCommand(commands.panicButton, () => {
+			panicButton()
+		})
+	)
+
+	context.subscriptions.push(
 		vscode.commands.registerCommand(commands.openSettings, () => {
 			vscode.commands.executeCommand(
 				'workbench.action.openSettings',
-				'@ext:MattiaConsiglio.vs-code-recorder'
+				'@ext:MattiaConsiglio.crowd-code'
 			)
 		})
 	)
 
 	context.subscriptions.push(
-		vscode.commands.registerCommand('vs-code-recorder.addToGitignore', async () => {
+		vscode.commands.registerCommand('crowd-code.addToGitignore', async () => {
 			await addToGitignore()
 		})
 	)
@@ -327,12 +335,16 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
 	// Autostart recording regardless of consent. The consent only gates data upload.
 	startRecording().catch(err => logToOutput(`Autostart recording failed unexpectedly: ${err}`, 'error'))
+
+	// Initialize git provider for branch checkout detection
+	initializeGitProvider()
 }
 
 export function deactivate(): void {
-	logToOutput(vscode.l10n.t('Deactivating crowd-code'), 'info')
+	logToOutput('Deactivating crowd-code', 'info')
 	if (recording.isRecording) {
 		stopRecording()
 	}
+	cleanupGitProvider()
 	statusBarItem.dispose()
 }

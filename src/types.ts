@@ -15,6 +15,7 @@ export enum ChangeType {
 	SELECTION_KEYBOARD = 'selection_keyboard',
 	SELECTION_MOUSE = 'selection_mouse',
 	SELECTION_COMMAND = 'selection_command',
+	GIT_BRANCH_CHECKOUT = 'git_branch_checkout',
 }
 
 export interface CSVRowBuilder {
