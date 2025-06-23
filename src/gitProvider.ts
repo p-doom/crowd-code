@@ -109,7 +109,7 @@ async function checkForBranchChanges(): Promise<void> {
             const newState = { branch: newBranch, repository }
             
             if (lastKnownBranch) {
-                console.log(`Branch checkout detected: ${lastKnownBranch} -> ${newBranch}`)
+                logToOutput(`Branch checkout detected: ${lastKnownBranch} -> ${newBranch}`, 'info')
                 handleBranchCheckout(newState, { branch: lastKnownBranch, repository })
             }
             
