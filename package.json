@@ -138,13 +138,13 @@
       "properties": {
         "crowdCode.export.exportPath": {
           "type": "string",
-          "default": "${workspaceFolder}/crowd-code/",
+          "default": "${TMPDIR}/crowd-code/",
           "markdownDescription": "Path where recordings will be exported. Use '${workspaceFolder}' to refer to the workspace folder.",
           "order": 0
         },
         "crowdCode.export.createPathOutsideWorkspace": {
           "type": "boolean",
-          "default": false,
+          "default": true,
           "description": "Whether to create the export path if it doesn't exist, even if it's outside the workspace folder.",
           "order": 1
         },
