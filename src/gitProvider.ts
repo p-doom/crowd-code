@@ -137,7 +137,7 @@ function updateGitState(): void {
             currentGitState = newState
         }
     }).catch(error => {
-        console.warn('Error getting initial git branch:', error)
+        logToOutput(`Error getting initial git branch: ${error}`, 'error')
     })
 }
 
