@@ -7,7 +7,7 @@
 	"command.refreshRecordFiles.title": "Refresh",
 	"command.addToGitignore.title": "Add to .gitignore",
 	"config.title": "crowd-code",
-	"config.exportPath.description": "Set the export path for recorded files. By default, this is set to $TMPDIR/crowd-code. You can use `${workspaceFolder}` to export to the workspace folder. If the specified path does not exist, it will be created automatically.",
+	"config.exportPath.description": "Set the export path for recordings. By default, this is set to $TMPDIR/crowd-code. You can use `${workspaceFolder}` to export to the workspace folder. If the specified path does not exist, it will be created automatically.",
 
 	"config.createPathOutsideWorkspace.description": "Create the export path outside the workspace",
 	"config.addToGitignore.description": "Add the export path to .gitignore when creating the folder",
