@@ -172,7 +172,7 @@ function handleBranchCheckout(newState: LocalGitState, previousState: LocalGitSt
     }
 
     if (isCurrentFileExported()) {
-        console.log('Current file is exported, skipping git checkout event')
+        logToOutput('Current file is exported, skipping git checkout event', 'info')
         return
     }
 
