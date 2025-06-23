@@ -229,7 +229,6 @@ export async function startRecording(): Promise<void> {
 
         if (typeof CROWD_CODE_API_GATEWAY_URL !== 'string' || !CROWD_CODE_API_GATEWAY_URL.trim()) {
             logToOutput("CROWD_CODE_API_GATEWAY_URL must be a non-empty string. Please check your build configuration.", 'error');
-            logToOutput(`CROWD_CODE_API_GATEWAY_URL: ${CROWD_CODE_API_GATEWAY_URL}`, 'info');
             return;
         }
 
