@@ -40,7 +40,7 @@ export function initializeGitProvider(): void {
     // Listen for workspace changes
     vscode.workspace.onDidChangeWorkspaceFolders(() => {
         if (!gitWatcherInitialized) {
-            console.log('Workspace folders changed, retrying git provider initialization...')
+            logToOutput('Workspace folders changed, retrying git provider initialization...', 'info')
             tryInitializeGitProvider().catch(error => {
                 console.warn('Error in workspace change git provider initialization:', error)
             })
