@@ -20,7 +20,7 @@ let gitStateCheckInterval: NodeJS.Timeout | undefined
  * Initializes the git detection using file system watchers and git commands
  */
 export function initializeGitProvider(): void {
-    console.log('Initializing git provider using file system watchers...')
+    logToOutput('Initializing git provider using file system watchers...', 'info')
     
     // Try to initialize immediately
     tryInitializeGitProvider().catch(error => {
