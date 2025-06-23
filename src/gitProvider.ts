@@ -32,7 +32,7 @@ export function initializeGitProvider(): void {
         if (!gitWatcherInitialized) {
             logToOutput('Retrying git provider initialization...', 'info')
             tryInitializeGitProvider().catch(error => {
-                console.warn('Error in retry git provider initialization:', error)
+                logToOutput(`Error in retry git provider initialization: ${error}`, 'error')
             })
         }
     }, 2000)
