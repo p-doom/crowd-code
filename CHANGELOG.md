@@ -1,6 +1,6 @@
 # Change Log
 
-All notable changes to the "vs-code-recorder" extension will be documented in this file.
+All notable changes to the "crowd-code" extension will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
@@ -18,6 +18,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 ### Security
+
+## 1.1.3
+
+### Added
+
+- Include userId (hashed) and extension version as metadata when uploading CSVs
+- A new command to display the userId in the command palette for the user
+- New Github Release workflow
+- Capture git checkouts as IDE action
+- Panic-button to immediately remove sensitive data
+- Ask for user consent on extension installation
+
+### Changed
+
+- User-friendly upload to S3 through API Gateway and Lambda functions
+- Export path defaulting to `$TMPDIR` when none is specified by the user, ensuring a valid export location is always available and NOT in the user's workspace
+- Autostart even if non-editable pane is focused
+
+## 1.1.2
+
+### Added
+
+- log cursor movement, command execution and terminal interactions
+- Upload recording files to S3 bucket
+
+### Changed
+
+- Recording on extension startup, autostart logging
+- only log file content the first time
+- stop recording on closure
+- metadata, icon, project name
+
+
+forked: crowd-code
+--- 
 
 ## 1.1.1
 

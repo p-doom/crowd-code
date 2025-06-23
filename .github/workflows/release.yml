@@ -31,6 +31,8 @@ jobs:
         
       - name: Package extension
         run: vsce package
+        env:
+          CROWD_CODE_API_GATEWAY_URL: ${{ secrets.CROWD_CODE_API_GATEWAY_URL }}
         
       - name: Get version from package.json
         id: get_version

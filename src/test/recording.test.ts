@@ -13,8 +13,8 @@ import { statusBarItem } from '../extension'
 const waitMs = (ms = 500) => new Promise(resolve => setTimeout(resolve, ms))
 
 suite('Recording Tests', () => {
-	const publisher = 'MattiaConsiglio'
-	const extensionName = 'vs-code-recorder'
+	const publisher = 'pdoom-org'
+	const extensionName = 'crowd-code'
 
 	let workspaceFolder: string
 

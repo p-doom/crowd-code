@@ -1,4 +1,5 @@
 const path = require('node:path')
+const webpack = require('webpack')
 
 //@ts-check
 /** @typedef {import('webpack').Configuration} WebpackConfig **/
@@ -40,5 +41,11 @@ const extensionConfig = {
 	infrastructureLogging: {
 		level: 'log', // enables logging required for problem matchers
 	},
+	plugins: [
+        new webpack.DefinePlugin({
+            'process.env.CROWD_CODE_API_GATEWAY_URL': JSON.stringify(process.env.CROWD_CODE_API_GATEWAY_URL)
+        })
+    ]
+
 }
 module.exports = [extensionConfig]

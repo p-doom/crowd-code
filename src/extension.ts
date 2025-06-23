@@ -1,4 +1,5 @@
 import * as vscode from 'vscode'
+import * as crypto from 'crypto'
 import { getExportPath, logToOutput, outputChannel, addToGitignore } from './utilities'
 import {
 	updateStatusBarItem,
@@ -10,20 +11,22 @@ import {
 	addToFileQueue,
 	buildCsvRow,
 	appendToFile,
+	panicButton,
 } from './recording'
 import { ChangeType, CSVRowBuilder } from './types'
-import { RecordFilesProvider } from './recordFilesProvider'
-import type { RecordFile } from './recordFilesProvider'
+import { RecordFilesProvider, type RecordFile } from './recordFilesProvider'
 import { ActionsProvider } from './actionsProvider'
+import { initializeGitProvider, cleanupGitProvider } from './gitProvider'
 import * as fs from 'node:fs'
 import * as path from 'node:path'
+import { showConsentChangeDialog, ensureConsent, hasConsent } from './consent'
 
 export let statusBarItem: vscode.StatusBarItem
 export let extContext: vscode.ExtensionContext
 export let actionsProvider: ActionsProvider
 
 function onConfigurationChange(event: vscode.ConfigurationChangeEvent) {
-	if (event.affectsConfiguration('vsCodeRecorder')) {
+	if (event.affectsConfiguration('crowdCode')) {
 		updateStatusBarItem()
 		getExportPath()
 	}
@@ -64,10 +67,30 @@ async function deleteFileOrFolder(filePath: string): Promise<void> {
 	}
 }
 
-export function activate(context: vscode.ExtensionContext): void {
+export async function activate(context: vscode.ExtensionContext): Promise<void> {
 	extContext = context
 	outputChannel.show()
-	logToOutput(vscode.l10n.t('Activating crowd-code'), 'info')
+	logToOutput('Activating crowd-code', 'info')
+
+	// Save anonUserId globally for user to copy
+	const userName = process.env.USER || process.env.USERNAME || "coder";
+	const machineId = vscode.env.machineId ?? null;
+	const rawId = `${machineId}:${userName}`;
+	const anonUserId = crypto.createHash('sha256').update(rawId).digest('hex') as string;
+
+	extContext.globalState.update('userId', anonUserId);
+
+	// Register userID display
+	context.subscriptions.push(
+		vscode.commands.registerCommand('crowd-code.showUserId', () => {
+			const userId = extContext.globalState.get<string>('userId');
+			if (!userId) {
+				vscode.window.showWarningMessage("User ID not registered yet. Please wait a few seconds until the extension is fully activated.");
+				return;
+			}
+			vscode.window.showInformationMessage(`Your User ID is: ${userId}`);
+		}))
+
 
 	// Register Record Files Provider
 	const recordFilesProvider = new RecordFilesProvider()
@@ -81,7 +104,7 @@ export function activate(context: vscode.ExtensionContext): void {
 
 	// Register refresh command
 	context.subscriptions.push(
-		vscode.commands.registerCommand('vs-code-recorder.refreshRecordFiles', () => {
+		vscode.commands.registerCommand('crowd-code.refreshRecordFiles', () => {
 			recordFilesProvider.refresh()
 		})
 	)
@@ -89,7 +112,7 @@ export function activate(context: vscode.ExtensionContext): void {
 	// Register delete command
 	context.subscriptions.push(
 		vscode.commands.registerCommand(
-			'vs-code-recorder.deleteRecordFile',
+			'crowd-code.deleteRecordFile',
 			async (item: RecordFile) => {
 				const exportPath = getExportPath()
 				if (!exportPath) {
@@ -97,12 +120,12 @@ export function activate(context: vscode.ExtensionContext): void {
 				}
 
 				const result = await vscode.window.showWarningMessage(
-					vscode.l10n.t('Are you sure you want to delete {name}?', { name: item.label }),
-					vscode.l10n.t('Yes'),
-					vscode.l10n.t('No')
+					`Are you sure you want to delete ${item.label}?`,
+					'Yes',
+					'No'
 				)
 
-				if (result === vscode.l10n.t('Yes')) {
+				if (result === 'Yes') {
 					try {
 						const itemPath = getFullPath(item, exportPath)
 						await deleteFileOrFolder(itemPath)
@@ -117,7 +140,7 @@ export function activate(context: vscode.ExtensionContext): void {
 
 	// Register reveal in explorer command
 	context.subscriptions.push(
-		vscode.commands.registerCommand('vs-code-recorder.revealInExplorer', (item: RecordFile) => {
+		vscode.commands.registerCommand('crowd-code.revealInExplorer', (item: RecordFile) => {
 			const exportPath = getExportPath()
 			if (!exportPath) {
 				return
@@ -141,19 +164,33 @@ export function activate(context: vscode.ExtensionContext): void {
 	)
 
 	context.subscriptions.push(
+		vscode.commands.registerCommand(commands.panicButton, () => {
+			panicButton()
+		})
+	)
+
+	context.subscriptions.push(
 		vscode.commands.registerCommand(commands.openSettings, () => {
 			vscode.commands.executeCommand(
 				'workbench.action.openSettings',
-				'@ext:MattiaConsiglio.vs-code-recorder'
+				'@ext:MattiaConsiglio.crowd-code'
 			)
 		})
 	)
 
 	context.subscriptions.push(
-		vscode.commands.registerCommand('vs-code-recorder.addToGitignore', async () => {
+		vscode.commands.registerCommand('crowd-code.addToGitignore', async () => {
 			await addToGitignore()
 		})
 	)
+
+	// Register consent management command
+	context.subscriptions.push(
+		vscode.commands.registerCommand('crowd-code.consent', async () => {
+			await showConsentChangeDialog()
+		})
+	)
+
 
 	context.subscriptions.push(vscode.workspace.onDidChangeConfiguration(onConfigurationChange))
 
@@ -292,13 +329,22 @@ export function activate(context: vscode.ExtensionContext): void {
 	statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 9000)
 	updateStatusBarItem()
 	context.subscriptions.push(statusBarItem)
-	startRecording().catch(err => logToOutput(`Autostart recording failed unexpectedly: ${err}`, 'error'));
+
+	// Ensure consent is obtained when the extension is first activated
+	await ensureConsent()
+
+	// Autostart recording regardless of consent. The consent only gates data upload.
+	startRecording().catch(err => logToOutput(`Autostart recording failed unexpectedly: ${err}`, 'error'))
+
+	// Initialize git provider for branch checkout detection
+	initializeGitProvider()
 }
 
 export function deactivate(): void {
-	logToOutput(vscode.l10n.t('Deactivating crowd-code'), 'info')
+	logToOutput('Deactivating crowd-code', 'info')
 	if (recording.isRecording) {
 		stopRecording()
 	}
+	cleanupGitProvider()
 	statusBarItem.dispose()
 }
