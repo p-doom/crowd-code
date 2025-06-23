@@ -793,25 +793,8 @@ export async function panicButton(): Promise<void> {
                 
                 vscode.window.showInformationMessage(
                     `Removed content: "${summaryText}"`,
-                    'View All Removed Lines',
                     'Dismiss'
-                ).then(selection => {
-                    if (selection === 'View All Removed Lines') {
-                        // Show all accumulated content in output panel
-                        logToOutput(`Complete accumulated removed content:`, 'info')
-                        sortedContent.forEach((item, index) => {
-                            logToOutput(`  ${item.sequence}: ${item.content}`, 'info')
-                        })
-                        // Open the output panel
-                        vscode.commands.executeCommand('workbench.action.output.toggleOutput')
-                    }
-                })
-                
-                // Also log the complete details to output for debugging
-                logToOutput(`Complete removed content:`, 'info')
-                contentSummary.forEach((item, index) => {
-                    logToOutput(`  ${item.sequence}: ${item.content}`, 'info')
-                })
+                )
             }
         }
 
