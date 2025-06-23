@@ -42,7 +42,7 @@ export function initializeGitProvider(): void {
         if (!gitWatcherInitialized) {
             logToOutput('Workspace folders changed, retrying git provider initialization...', 'info')
             tryInitializeGitProvider().catch(error => {
-                console.warn('Error in workspace change git provider initialization:', error)
+                logToOutput(`Error in workspace change git provider initialization: ${error}`, 'error')
             })
         }
     })
