@@ -117,7 +117,8 @@ async function checkForBranchChanges(): Promise<void> {
             currentGitState = newState
         }
     } catch (error) {
-        console.warn('Error checking for branch changes:', error)
+        logToOutput(`Error checking for branch changes: ${error}`, 'error')
+
     }
 }
 
