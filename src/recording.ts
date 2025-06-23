@@ -138,11 +138,6 @@ function createRecordingFolder(folderPath: string): void {
  * Starts the recording process and initializes necessary variables.
  */
 export async function startRecording(): Promise<void> {
-    if (!vscode.window.activeTextEditor) {
-        vscode.window.showErrorMessage(vscode.l10n.t('No active text editor'))
-        logToOutput(vscode.l10n.t('No active text editor'), 'info')
-        return
-    }
     if (recording.isRecording) {
         notificationWithProgress(vscode.l10n.t('Already recording'))
         logToOutput(vscode.l10n.t('Already recording'), 'info')
@@ -199,6 +194,7 @@ export async function startRecording(): Promise<void> {
     notificationWithProgress(vscode.l10n.t('Recording started'))
     logToOutput(vscode.l10n.t('Recording started'), 'info')
 
+    // Only log initial editor content if there's an active text editor
     const editorText = vscode.window.activeTextEditor?.document.getText()
     const activeEditorUri = vscode.window.activeTextEditor?.document.uri.toString()
 
@@ -215,7 +211,18 @@ export async function startRecording(): Promise<void> {
         addToFileQueue(buildCsvRow(csvRow))
         appendToFile()
         recording.activatedFiles.add(activeEditorUri)
-        actionsProvider.setCurrentFile(vscode.window.activeTextEditor.document.fileName)
+        actionsProvider.setCurrentFile(vscode.window.activeTextEditor?.document.fileName || '')
+    } else {
+        // If no active editor, just add the header row
+        recording.sequence++
+        addToFileQueue(buildCsvRow({ 
+            sequence: recording.sequence,
+            rangeOffset: 0,
+            rangeLength: 0,
+            text: '',
+            type: ChangeType.HEADING 
+        }))
+        appendToFile()
     }
 
     extContext.subscriptions.push(onChangeSubscription)
@@ -609,11 +616,6 @@ export function addToFileQueue(
  * Updates the status bar item with the current recording status and time.
  */
 export function updateStatusBarItem(): void {
-    const editor = vscode.window.activeTextEditor
-    if (!editor && !recording) {
-        statusBarItem.hide()
-        return
-    }
     if (recording.isRecording) {
         if (getConfig().get('appearance.showTimer') === false) {
             statusBarItem.text = '$(debug-stop)'
@@ -624,7 +626,13 @@ export function updateStatusBarItem(): void {
             statusBarItem.tooltip = vscode.l10n.t('Stop Recording')
         }
         statusBarItem.command = commands.stopRecording
+        statusBarItem.show()
     } else {
+        const editor = vscode.window.activeTextEditor
+        if (!editor) {
+            statusBarItem.hide()
+            return
+        }
         if (getConfig().get('appearance.minimalMode') === true) {
             statusBarItem.text = '$(circle-large-filled)'
         } else {
@@ -632,6 +640,6 @@ export function updateStatusBarItem(): void {
         }
         statusBarItem.tooltip = vscode.l10n.t('Start Recording')
         statusBarItem.command = commands.startRecording
+        statusBarItem.show()
     }
-    statusBarItem.show()
 }
