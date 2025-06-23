@@ -55,7 +55,7 @@ async function tryInitializeGitProvider(): Promise<void> {
     try {
         const workspaceFolder = vscode.workspace.workspaceFolders?.[0]
         if (!workspaceFolder) {
-            console.log('No workspace folder found')
+            logToOutput('No workspace folder found', 'info')
             return
         }
         
