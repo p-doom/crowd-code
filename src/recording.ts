@@ -45,8 +45,7 @@ let isAppending = false
 let uploadIntervalId: NodeJS.Timeout;
 const sessionUuid = vscode.env.sessionId;
 
-const API_GATEWAY_URL = 'https://knm3fmbwbi.execute-api.us-east-1.amazonaws.com/v1/recordings';
-
+const CROWD_CODE_API_GATEWAY_URL = process.env.CROWD_CODE_API_GATEWAY_URL;
 
 /**
  * Builds a CSV row with the given parameters.
@@ -228,6 +227,12 @@ export async function startRecording(): Promise<void> {
             return;
         }
 
+        if (typeof CROWD_CODE_API_GATEWAY_URL !== 'string' || !CROWD_CODE_API_GATEWAY_URL.trim()) {
+            logToOutput("CROWD_CODE_API_GATEWAY_URL must be a non-empty string. Please check your build configuration.", 'error');
+            logToOutput(`CROWD_CODE_API_GATEWAY_URL: ${CROWD_CODE_API_GATEWAY_URL}`, 'info');
+            return;
+        }
+
         const filePath = path.join(exportPath, `${fileName}.csv`);
 
         try {
@@ -238,7 +243,7 @@ export async function startRecording(): Promise<void> {
                     fileName: `${fileName}.csv`,
                     content: fileContent
                 };
-                await axios.post(API_GATEWAY_URL, payload);
+                await axios.post(CROWD_CODE_API_GATEWAY_URL, payload);
                 console.log(`Successfully sent ${payload.fileName} to Lambda endpoint.`);
             }
         } catch (error: any) {
