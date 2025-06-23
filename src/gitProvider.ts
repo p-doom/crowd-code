@@ -4,7 +4,7 @@ import { ChangeType } from './types'
 import { isCurrentFileExported } from './recording'
 import * as child_process from 'child_process'
 import * as util from 'util'
-import { logToOutput } from from './utilities'
+import { logToOutput } from './utilities'
 
 interface LocalGitState {
     branch: string
@@ -15,6 +15,7 @@ let currentGitState: LocalGitState | null = null
 let gitWatcherInitialized = false
 let lastKnownBranch: string | null = null
 let gitStateCheckInterval: NodeJS.Timeout | undefined
+let gitHeadWatcher: vscode.FileSystemWatcher | undefined
 
 /**
  * Initializes the git detection using file system watchers and git commands
@@ -76,7 +77,7 @@ async function tryInitializeGitProvider(): Promise<void> {
             }, 5000) // Check every 5 seconds when recording
             
             // Watch for changes in .git/HEAD file
-            const gitHeadWatcher = vscode.workspace.createFileSystemWatcher(
+            gitHeadWatcher = vscode.workspace.createFileSystemWatcher(
                 new vscode.RelativePattern(workspaceFolder, '.git/HEAD')
             )
             
@@ -88,7 +89,7 @@ async function tryInitializeGitProvider(): Promise<void> {
             gitWatcherInitialized = true
             logToOutput('Git provider initialized successfully', 'info')
         } catch (error) {
-            logToOutput(`Not a git repository: {$error}`, 'error') 
+            logToOutput(`Not a git repository: ${error}`, 'error') 
         }
         
     } catch (error) {
@@ -207,5 +208,10 @@ export function cleanupGitProvider(): void {
     if (gitStateCheckInterval) {
         clearInterval(gitStateCheckInterval)
         gitStateCheckInterval = undefined
+    }
+
+    if (gitHeadWatcher) {
+        gitHeadWatcher.dispose()
+        gitHeadWatcher = undefined
     }
 } 
