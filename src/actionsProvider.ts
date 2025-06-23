@@ -181,7 +181,7 @@ export class ActionsProvider implements vscode.TreeDataProvider<ActionItem> {
 			getConsentStatusMessage(),
 			vscode.TreeItemCollapsibleState.None,
 			{
-				command: 'vs-code-recorder.consent',
+				command: 'crowd-code.consent',
 				title: 'Manage Data Collection Consent',
 			},
 			'shield'
