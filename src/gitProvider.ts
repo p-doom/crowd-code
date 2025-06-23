@@ -4,6 +4,7 @@ import { ChangeType } from './types'
 import { isCurrentFileExported } from './recording'
 import * as child_process from 'child_process'
 import * as util from 'util'
+import { logToOutput } from from './utilities'
 
 interface LocalGitState {
     branch: string
