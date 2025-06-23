@@ -67,7 +67,7 @@ Playback is a feature by the upstream repository. We have not tested playback us
 
 - `vsCodeRecorder.export.exportPath`: Set the export path. Use `${workspaceFolder}` to export to the workspace folder. In case the path does not exist in the workspace, it will be created.
 
-  Default: `/tmp/crowd-code/`
+  Default: `$TMPDIR/crowd-code/`
 
 - `vsCodeRecorder.export.createPathOutsideWorkspace`: Create the export path outside the workspace if it doesn't exist
 
