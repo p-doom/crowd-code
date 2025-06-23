@@ -63,7 +63,7 @@ async function tryInitializeGitProvider(): Promise<void> {
         const gitDir = vscode.Uri.joinPath(workspaceFolder.uri, '.git')
         try {
             await vscode.workspace.fs.stat(gitDir)
-            console.log('Git repository found')
+            logToOutput('Git repository found', 'info')
             
             // Get initial state
             updateGitState()
