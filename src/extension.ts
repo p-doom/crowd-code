@@ -186,7 +186,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
 	// Register consent management command
 	context.subscriptions.push(
-		vscode.commands.registerCommand('vs-code-recorder.consent', async () => {
+		vscode.commands.registerCommand('crowd-code.consent', async () => {
 			await showConsentChangeDialog()
 		})
 	)

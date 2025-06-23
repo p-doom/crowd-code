@@ -100,12 +100,12 @@
           "group": "navigation"
         },
         {
-          "command": "vs-code-recorder.addToGitignore",
+          "command": "crowd-code.addToGitignore",
           "when": "view == actions",
           "group": "navigation"
         },
         {
-          "command": "vs-code-recorder.consent",
+          "command": "crowd-code.consent",
           "when": "view == actions",
           "group": "navigation"
         }

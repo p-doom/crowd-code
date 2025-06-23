@@ -54,6 +54,7 @@ Available commands:
 - `crowd-code.stopRecording`: Stop the recording
 - `crowd-code.panicButton`: Remove the last few actions from the dataset
 - `crowd-code.openSettings`: Open the extension settings
+- `crowd-code.consent`: Manage data collection consent
 
 ## 🔒 Privacy
 
