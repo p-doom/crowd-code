@@ -1,5 +1,7 @@
 # ⚫ crowd-code
 
+To install the extension, simply follow the instructions at https://github.com/p-doom/crowd-code/releases.
+
 This extension provides functionality to record IDE actions. Currently supported actions include text insertions, deletions, undo, redo, cursor movement (including VIM motions), file switches, git branch checkouts, terminal invocation and terminal command execution (both input and output). The changes are recorded and stored in CSV files. If you consent to participate in crowd-sourcing VS code actions, the CSV files are uploaded to an S3 bucket. We anonymize and clean the crowd-sourced dataset and periodically share it with the community. If you do not consent, no data will leave your machine, and the CSV files will solely be stored locally.
 This extension provides functionality to record IDE actions. Currently supported actions include text insertions, deletions, undo, redo, cursor movement (including VIM motions), file switches, git branch checkouts, terminal invocation and terminal command execution (both input and output). The changes are recorded in a CSV file and uploaded to an S3 bucket, which we plan to thoroughly clean, process, and eventually share with the community. 
 

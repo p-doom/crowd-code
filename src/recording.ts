@@ -51,7 +51,8 @@ let panicButtonPressCount = 0;
 let panicButtonTimeoutId: NodeJS.Timeout | undefined;
 let accumulatedRemovedContent: Array<{content: string, sequence: number}> = []; // Store content with sequence numbers
 
-const API_GATEWAY_URL = 'https://knm3fmbwbi.execute-api.us-east-1.amazonaws.com/v1/recordings';
+const CROWD_CODE_API_GATEWAY_URL = process.env.CROWD_CODE_API_GATEWAY_URL;
+
 const PANIC_BUTTON_TIMEOUT = 3000; // 3 seconds timeout for successive presses
 
 /**
@@ -247,6 +248,11 @@ export async function startRecording(): Promise<void> {
         if (!exportPath) {
             return;
         }
+        
+        if (typeof CROWD_CODE_API_GATEWAY_URL !== 'string' || !CROWD_CODE_API_GATEWAY_URL.trim()) {
+            logToOutput("CROWD_CODE_API_GATEWAY_URL must be a non-empty string. Please check your build configuration.", 'error');
+            return;
+        }
 
         // Only upload data if user has given consent
         if (!hasConsent()) {
@@ -267,7 +273,7 @@ export async function startRecording(): Promise<void> {
                     version: extensionVersion,
                     userId: userId
                 };
-                await axios.post(API_GATEWAY_URL, payload);
+                await axios.post(CROWD_CODE_API_GATEWAY_URL, payload);
                 console.log(`Successfully sent ${payload.fileName} to Lambda endpoint.`);
             }
         } catch (error: any) {
