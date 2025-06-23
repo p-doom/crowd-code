@@ -47,10 +47,10 @@ You can customize the recording experience with these features:
 You can also use the command palette to access the extension's features.
 Available commands:
 
-- `vs-code-recorder.startRecording`: Start the recording
-- `vs-code-recorder.stopRecording`: Stop the recording
-- `vs-code-recorder.panicButton`: Remove the last few actions from the dataset
-- `vs-code-recorder.openSettings`: Open the extension settings
+- `crowd-code.startRecording`: Start the recording
+- `crowd-code.stopRecording`: Stop the recording
+- `crowd-code.panicButton`: Remove the last few actions from the dataset
+- `crowd-code.openSettings`: Open the extension settings
 
 ## 📄 Output
 
