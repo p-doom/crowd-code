@@ -30,7 +30,7 @@ export function initializeGitProvider(): void {
     // Also try after a delay in case git is not ready yet
     setTimeout(() => {
         if (!gitWatcherInitialized) {
-            console.log('Retrying git provider initialization...')
+            logToOutput('Retrying git provider initialization...', 'info')
             tryInitializeGitProvider().catch(error => {
                 console.warn('Error in retry git provider initialization:', error)
             })
