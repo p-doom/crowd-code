@@ -1,7 +1,7 @@
 {
-	"vsCodeRecorder.export.exportPath": "${workspaceFolder}/vs-code-recorder/",
-	"vsCodeRecorder.export.createPathOutsideWorkspace": false,
-	"vsCodeRecorder.export.exportFormats": ["JSON", "SRT"],
-	"vsCodeRecorder.appearance.minimalMode": false,
-	"vsCodeRecorder.appearance.showTimer": true
+	"crowdCode.export.exportPath": "${workspaceFolder}/crowd-code/",
+	"crowdCode.export.createPathOutsideWorkspace": false,
+	"crowdCode.export.exportFormats": ["JSON", "SRT"],
+	"crowdCode.appearance.minimalMode": false,
+	"crowdCode.appearance.showTimer": true
 }

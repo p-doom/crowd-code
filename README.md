@@ -1,6 +1,6 @@
 # ⚫ crowd-code
 
-This extension provides functionality to record IDE actions. Currently supported actions include text insertions, deletions, undo, redo, cursor movement (including VIM motions), file switches, terminal invocation and terminal command execution (both input and output). The changes are recorded in a CSV file and can be processed to generate output files in SRT and JSON formats. 
+This extension provides functionality to record IDE actions. Currently supported actions include text insertions, deletions, undo, redo, cursor movement (including VIM motions), file switches, terminal invocation and terminal command execution (both input and output). The changes are recorded in a CSV file and uploaded to an S3 bucket, which we plan to thoroughly clean, process, and eventually share with the community. 
 
 All uncaptured data is lost data. We want to crowd-source a dense dataset of IDE actions to eventually finetune models on. This would (to the best of our knowledge) constitute the first crowd-sourced dataset of dense IDE actions.
 
@@ -24,7 +24,7 @@ We thank Mattia Consiglio for his awesome work on the upstream repository, which
 
 ![crowd-code Extension](https://raw.githubusercontent.com/mattia-consiglio/vs-code-recorder/main/img/preview.gif)
 
-As soon as the extension activates, recording commences automatically. Recording automatically stop upon IDE closure.
+As soon as the extension activates, recording commences automatically. Recording automatically stops upon IDE closure.
 Additionally, you can control the recording in two ways:
 
 1. Using the status bar (on the right): Click on "Start recording" to begin and "Stop recording" to end.
@@ -46,9 +46,9 @@ You can customize the recording experience with these features:
 You can also use the command palette to access the extension's features.
 Available commands:
 
-- `vs-code-recorder.startRecording`: Start the recording
-- `vs-code-recorder.stopRecording`: Stop the recording
-- `vs-code-recorder.openSettings`: Open the extension settings
+- `crowd-code.startRecording`: Start the recording
+- `crowd-code.stopRecording`: Stop the recording
+- `crowd-code.openSettings`: Open the extension settings
 
 ## 📄 Output
 
@@ -65,31 +65,31 @@ Playback is a feature by the upstream repository. We have not tested playback us
 
 ## 🔧 Extension Settings
 
-- `vsCodeRecorder.export.exportPath`: Set the export path. Use `${workspaceFolder}` to export to the workspace folder. In case the path does not exist in the workspace, it will be created.
+- `crowdCode.export.exportPath`: Set the export path. Use `${workspaceFolder}` to export to the workspace folder. In case the path does not exist in the workspace, it will be created.
 
   Default: `$TMPDIR/crowd-code/`
 
-- `vsCodeRecorder.export.createPathOutsideWorkspace`: Create the export path outside the workspace if it doesn't exist
+- `crowdCode.export.createPathOutsideWorkspace`: Create the export path outside the workspace if it doesn't exist
 
   Default: `true`
 
-- `vsCodeRecorder.export.addToGitignore`: Add the export path to .gitignore when creating the folder
+- `crowdCode.export.addToGitignore`: Add the export path to .gitignore when creating the folder
 
   Default: `false`
 
-- `vsCodeRecorder.export.exportFormats`: Enabled export formats (SRT or JSON or both)
+- `crowdCode.export.exportFormats`: Enabled export formats (SRT or JSON or both)
 
   Default: `["JSON", "SRT"]`
 
-- `vsCodeRecorder.recording.askFolderName`: Ask for a custom folder name before starting a recording
+- `crowdCode.recording.askFolderName`: Ask for a custom folder name before starting a recording
 
   Default: `false`
 
-- `vsCodeRecorder.appearance.minimalMode`: Enable or disable the minimal mode
+- `crowdCode.appearance.minimalMode`: Enable or disable the minimal mode
 
   Default: `false`
 
-- `vsCodeRecorder.appearance.showTimer`: Enable or disable the display time
+- `crowdCode.appearance.showTimer`: Enable or disable the display time
 
   Default: `true`
 
