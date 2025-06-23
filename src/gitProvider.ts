@@ -86,7 +86,7 @@ async function tryInitializeGitProvider(): Promise<void> {
             })
             
             gitWatcherInitialized = true
-            console.log('Git provider initialized successfully')
+            logToOutput('Git provider initialized successfully', 'info')
         } catch (error) {
             console.log('Not a git repository:', error)
         }
