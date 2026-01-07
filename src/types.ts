@@ -1,46 +1,147 @@
+/**
+ * crowd-code 2.0 Type Definitions
+ * Observation-Action schema for state-based capture
+ */
+
+
 export type ConsentStatus = 'pending' | 'accepted' | 'declined'
 
-export interface File {
-	name: string
+export type ActionSource = 'user' | 'external' | 'git' | 'git_checkout'
+
+export interface CursorPosition {
+	line: number
+	character: number
+}
+
+export interface ViewportState {
+	file: string
+	startLine: number
+	endLine: number
 	content: string
+	cursorPosition: CursorPosition | null
 }
 
-export enum ChangeType {
-	HEADING = 'heading',
-	CONTENT = 'content',
-	TAB = 'tab',
-	TERMINAL_FOCUS = 'terminal_focus',
-	TERMINAL_COMMAND = 'terminal_command',
-	TERMINAL_OUTPUT = 'terminal_output',
-	SELECTION_KEYBOARD = 'selection_keyboard',
-	SELECTION_MOUSE = 'selection_mouse',
-	SELECTION_COMMAND = 'selection_command',
-	GIT_BRANCH_CHECKOUT = 'git_branch_checkout',
+export interface TerminalEntry {
+	type: 'command' | 'output'
+	content: string
+	timestamp: number
 }
 
-export interface CSVRowBuilder {
-	sequence: number
+export interface TerminalState {
+	id: string
+	name: string
+	recentHistory: TerminalEntry[]
+}
+
+export interface Observation {
+	viewport: ViewportState | null
+	activeTerminals: TerminalState[]
+}
+
+export interface EditDiff {
 	rangeOffset: number
 	rangeLength: number
 	text: string
-	type?: string
 }
 
-export interface Change {
-	sequence: number
+export interface EditAction {
+	kind: 'edit'
+	source: ActionSource
 	file: string
-	startTime: number
-	endTime: number
-	language: string
-	text: string
+	diff: EditDiff
 }
 
-export interface Recording {
+export interface SelectionAction {
+	kind: 'selection'
+	source: ActionSource
+	file: string
+	selectionStart: CursorPosition
+	selectionEnd: CursorPosition
+	selectedText: string
+}
+
+export interface TabSwitchAction {
+	kind: 'tab_switch'
+	source: ActionSource
+	file: string
+	previousFile: string | null
+}
+
+export interface TerminalFocusAction {
+	kind: 'terminal_focus'
+	source: ActionSource
+	terminalId: string
+	terminalName: string
+}
+
+export interface TerminalCommandAction {
+	kind: 'terminal_command'
+	source: ActionSource
+	terminalId: string
+	terminalName: string
+	command: string
+}
+
+export interface TerminalOutputAction {
+	kind: 'terminal_output'
+	source: ActionSource
+	terminalId: string
+	terminalName: string
+	output: string
+}
+
+export interface FileChangeAction {
+	kind: 'file_change'
+	source: ActionSource
+	file: string
+	changeType: 'create' | 'change' | 'delete'
+	diff: string | null
+}
+
+export interface ScrollAction {
+	kind: 'scroll'
+	source: ActionSource
+	file: string
+}
+
+export type Action =
+	| EditAction
+	| SelectionAction
+	| TabSwitchAction
+	| TerminalFocusAction
+	| TerminalCommandAction
+	| TerminalOutputAction
+	| FileChangeAction
+	| ScrollAction
+
+export interface ObservationEvent {
+	sequence: number
+	timestamp: number
+	type: 'observation'
+	observation: Observation
+}
+
+export interface ActionEvent {
+	sequence: number
+	timestamp: number
+	type: 'action'
+	action: Action
+}
+
+export type RecordingEvent = ObservationEvent | ActionEvent
+
+export interface RecordingSession {
+	version: '2.0'
+	sessionId: string
+	startTime: number
+	events: RecordingEvent[]
+}
+
+export interface RecordingState {
 	isRecording: boolean
-	timer: number
 	startDateTime: Date | null
 	endDateTime: Date | null
 	sequence: number
-	customFolderName?: string
-	activatedFiles?: Set<string>
+	sessionId: string
+	events: RecordingEvent[]
 }

@@ -211,6 +211,7 @@
     "test": "vscode-test"
   },
   "devDependencies": {
+    "@types/diff": "^5.2.0",
     "@types/mocha": "^10.0.6",
     "@types/node": "18.x",
     "@types/vscode": "^1.89.0",
@@ -227,6 +228,9 @@
     "webpack-cli": "^5.1.4"
   },
   "dependencies": {
-    "axios": "^1.7.2"
+    "axios": "^1.7.2",
+    "diff": "^5.2.0",
+    "ignore": "^5.3.0",
+    "lru-cache": "^10.0.0"
   }
 }
