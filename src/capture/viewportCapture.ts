@@ -4,30 +4,17 @@
  */
 
 import * as vscode from 'vscode'
-import * as crypto from 'crypto'
 import type { ViewportState, Observation } from '../types'
-import { getTerminalStates } from './terminalCapture'
+import { getActiveTerminalViewport } from './terminalCapture'
 
 const POLL_INTERVAL_MS = 100 // 10Hz
 
-let lastObservationHash: string | null = null
 let viewportChanged = false
 
 let onObservationCallback: ((observation: Observation) => void) | null = null
 
 let visibleRangesDisposable: vscode.Disposable | null = null
 let pollInterval: NodeJS.Timeout | null = null
-
-/**
- * Compute a hash of the viewport state for deduplication
- */
-function computeObservationHash(observation: Observation): string {
-	const data = JSON.stringify({
-		viewport: observation.viewport,
-		terminalIds: observation.activeTerminals.map(t => t.id)
-	})
-	return crypto.createHash('md5').update(data).digest('hex')
-}
 
 /**
  * Capture the current viewport state from the active editor
@@ -76,47 +63,32 @@ export function captureViewportState(): ViewportState | null {
 }
 
 /**
- * Capture a full observation (viewport + terminal states)
+ * Capture a full observation (viewport + active terminal viewport)
  */
 export function captureObservation(): Observation {
 	const viewport = captureViewportState()
-	const activeTerminals = getTerminalStates()
+	const activeTerminal = getActiveTerminalViewport()
 
 	return {
 		viewport,
-		activeTerminals
+		activeTerminal
 	}
-}
-
-/**
- * Capture an observation immediately (for user actions)
- * Returns null if observation is identical to last one (deduplication)
- */
-export function captureNow(): Observation | null {
-	const observation = captureObservation()
-	const hash = computeObservationHash(observation)
-
-	if (hash === lastObservationHash) return null
-
-	lastObservationHash = hash
-	return observation
 }
 
 /**
  * Poll handler - captures observation if viewport changed
  */
 function pollViewport(): void {
-	if (!viewportChanged) return
+	if (!viewportChanged) {
+		return
+	}
 	viewportChanged = false
 
-	if (!onObservationCallback) return
+	if (!onObservationCallback) {
+		return
+	}
 
-	const observation = captureObservation()
-	const hash = computeObservationHash(observation)
-	if (hash === lastObservationHash) return
-
-	lastObservationHash = hash
-	onObservationCallback(observation)
+	onObservationCallback(captureObservation())
 }
 
 /**
@@ -148,7 +120,6 @@ export function cleanupViewportCapture(): void {
 		clearInterval(pollInterval)
 		pollInterval = null
 	}
-	lastObservationHash = null
 	viewportChanged = false
 }
 
@@ -156,6 +127,5 @@ export function cleanupViewportCapture(): void {
  * Reset the observation state (useful when switching recordings)
  */
 export function resetObservationState(): void {
-	lastObservationHash = null
 	viewportChanged = false
 }

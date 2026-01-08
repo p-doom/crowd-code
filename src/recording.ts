@@ -10,13 +10,13 @@ import * as vscode from 'vscode'
 import axios from 'axios'
 import { hasConsent } from './consent'
 import {
-	notificationWithProgress,
-	generateBaseFilePath,
-	formatDisplayTime,
-	getExportPath,
-	logToOutput,
-	getConfig,
-	addToGitignore,
+    notificationWithProgress,
+    generateBaseFilePath,
+    formatDisplayTime,
+    getExportPath,
+    logToOutput,
+    getConfig,
+    addToGitignore,
 } from './utilities'
 import type {
 	RecordingState,
@@ -35,7 +35,6 @@ import type {
 } from './types'
 import { extContext, statusBarItem, actionsProvider } from './extension'
 import {
-	captureNow,
 	captureObservation,
 	resetObservationState,
 	resetTerminalState,
@@ -57,10 +56,10 @@ export const recording: RecordingState = {
 
 
 export const commands = {
-	openSettings: 'crowd-code.openSettings',
-	startRecording: 'crowd-code.startRecording',
-	stopRecording: 'crowd-code.stopRecording',
-	panicButton: 'crowd-code.panicButton',
+    openSettings: 'crowd-code.openSettings',
+    startRecording: 'crowd-code.startRecording',
+    stopRecording: 'crowd-code.stopRecording',
+    panicButton: 'crowd-code.panicButton',
 }
 
 
@@ -114,21 +113,18 @@ function logAction(action: Action): void {
  * Log an observation followed by an action (the standard pattern for user actions)
  */
 function logObservationAndAction(action: Action): void {
-	const observation = captureNow()
-	if (observation) {
-		logObservation(observation)
-	}
+	logObservation(captureObservation())
 	logAction(action)
 }
 
 export function isCurrentFileExported(): boolean {
-	const editor = vscode.window.activeTextEditor
-	const filename = editor?.document.fileName.replaceAll('\\', '/')
-	const exportPath = getExportPath()
-	if (!editor || !filename || !exportPath) {
-		return false
-	}
-	return filename.startsWith(exportPath)
+    const editor = vscode.window.activeTextEditor
+    const filename = editor?.document.fileName.replaceAll('\\', '/')
+    const exportPath = getExportPath()
+    if (!editor || !filename || !exportPath) {
+        return false
+    }
+    return filename.startsWith(exportPath)
 }
 
 
@@ -136,7 +132,7 @@ function handleTextDocumentChange(event: vscode.TextDocumentChangeEvent): void {
 	if (!recording.isRecording) return
 	if (isCurrentFileExported()) return
 
-	const editor = vscode.window.activeTextEditor
+    const editor = vscode.window.activeTextEditor
 	if (!editor || event.document !== editor.document) return
 
 	const file = vscode.workspace.asRelativePath(event.document.fileName)
@@ -144,15 +140,15 @@ function handleTextDocumentChange(event: vscode.TextDocumentChangeEvent): void {
 	lastUserInteractionTime = Date.now()
 	lastUserEditedFile = file
 
-	for (const change of event.contentChanges) {
+        for (const change of event.contentChanges) {
 		const action: EditAction = {
 			kind: 'edit',
 			source: 'user',
 			file,
 			diff: {
-				rangeOffset: change.rangeOffset,
-				rangeLength: change.rangeLength,
-				text: change.text,
+                rangeOffset: change.rangeOffset,
+                rangeLength: change.rangeLength,
+                text: change.text,
 			},
 		}
 
@@ -311,33 +307,33 @@ function handleScrollObservation(observation: Observation): void {
 }
 
 function createRecordingFolder(folderPath: string): void {
-	if (!fs.existsSync(folderPath)) {
-		fs.mkdirSync(folderPath, { recursive: true })
-	}
+    if (!fs.existsSync(folderPath)) {
+        fs.mkdirSync(folderPath, { recursive: true })
+    }
 }
 
 export async function startRecording(): Promise<void> {
-	if (recording.isRecording) {
-		notificationWithProgress('Already recording')
-		logToOutput('Already recording', 'info')
-		return
-	}
+    if (recording.isRecording) {
+        notificationWithProgress('Already recording')
+        logToOutput('Already recording', 'info')
+        return
+    }
 
-	const exportPath = getExportPath()
-	if (!exportPath) {
-		return
-	}
+    const exportPath = getExportPath()
+    if (!exportPath) {
+        return
+    }
 
 	// Add to gitignore if configured
-	if (
-		getConfig().get<boolean>('export.addToGitignore') &&
-		getConfig().get<string>('export.exportPath')?.startsWith('${workspaceFolder}')
-	) {
-		await addToGitignore()
-	}
+    if (
+        getConfig().get<boolean>('export.addToGitignore') &&
+        getConfig().get<string>('export.exportPath')?.startsWith('${workspaceFolder}')
+    ) {
+        await addToGitignore()
+    }
 
 	// Initialize recording state
-	recording.startDateTime = new Date()
+    recording.startDateTime = new Date()
 	recording.endDateTime = null
 	recording.sequence = 0
 	recording.events = []
@@ -353,11 +349,11 @@ export async function startRecording(): Promise<void> {
 
 	// Create recording folder
 	const baseFilePath = generateBaseFilePath(recording.startDateTime, false, undefined, recording.sessionId)
-	if (!baseFilePath) {
-		return
-	}
-	const folderPath = path.dirname(path.join(exportPath, baseFilePath))
-	createRecordingFolder(folderPath)
+    if (!baseFilePath) {
+        return
+    }
+    const folderPath = path.dirname(path.join(exportPath, baseFilePath))
+    createRecordingFolder(folderPath)
 
 	// Initialize capture modules with callbacks
 	initializeViewportCapture(extContext, handleScrollObservation)
@@ -379,13 +375,13 @@ export async function startRecording(): Promise<void> {
 		vscode.window.onDidChangeActiveTextEditor(handleActiveEditorChange)
 	)
 
-	recording.isRecording = true
+    recording.isRecording = true
 
 	// Start timer
-	intervalId = setInterval(() => {
+    intervalId = setInterval(() => {
 		timer++
-		updateStatusBarItem()
-	}, 1000)
+        updateStatusBarItem()
+    }, 1000)
 
 	// Capture initial observation
 	const initialObservation = captureObservation()
@@ -396,43 +392,43 @@ export async function startRecording(): Promise<void> {
 		await uploadRecording()
 	}, 5 * 60 * 1000) // 5 minutes
 
-	notificationWithProgress('Recording started')
+    notificationWithProgress('Recording started')
 	logToOutput('Recording started (v2.0)', 'info')
 
-	updateStatusBarItem()
-	updatePanicButton()
-	actionsProvider.setRecordingState(true)
+    updateStatusBarItem()
+    updatePanicButton()
+    actionsProvider.setRecordingState(true)
 
 	// Set current file
 	const editor = vscode.window.activeTextEditor
 	if (editor) {
 		previousFile = vscode.workspace.asRelativePath(editor.document.fileName)
 		actionsProvider.setCurrentFile(editor.document.fileName)
-	}
-}
+                }
+            }
 
 export async function stopRecording(force = false): Promise<void> {
-	if (!recording.isRecording) {
-		notificationWithProgress('Not recording')
-		return
-	}
+    if (!recording.isRecording) {
+        notificationWithProgress('Not recording')
+        return
+    }
 
-	recording.isRecording = false
+    recording.isRecording = false
 	recording.endDateTime = new Date()
 
 	// Clear intervals
 	if (intervalId) {
-		clearInterval(intervalId)
+    clearInterval(intervalId)
 		intervalId = null
 	}
 	if (uploadIntervalId) {
 		clearInterval(uploadIntervalId)
 		uploadIntervalId = null
 	}
-	if (panicButtonTimeoutId) {
-		clearTimeout(panicButtonTimeoutId)
-		panicButtonTimeoutId = undefined
-	}
+    if (panicButtonTimeoutId) {
+        clearTimeout(panicButtonTimeoutId)
+        panicButtonTimeoutId = undefined
+    }
 
 	// Dispose subscriptions
 	for (const subscription of subscriptions) {
@@ -443,21 +439,21 @@ export async function stopRecording(force = false): Promise<void> {
 	timer = 0
 	panicButtonPressCount = 0
 
-	updateStatusBarItem()
-	updatePanicButton()
-	actionsProvider.setRecordingState(false)
+    updateStatusBarItem()
+    updatePanicButton()
+    actionsProvider.setRecordingState(false)
 
-	if (force) {
-		notificationWithProgress('Recording cancelled')
-		logToOutput('Recording cancelled', 'info')
+    if (force) {
+        notificationWithProgress('Recording cancelled')
+        logToOutput('Recording cancelled', 'info')
 		recording.events = []
-		return
-	}
+        return
+    }
 
 	// Save recording
 	await saveRecording()
 
-	notificationWithProgress('Recording finished')
+    notificationWithProgress('Recording finished')
 	logToOutput('Recording finished (v2.0)', 'info')
 }
 
@@ -465,13 +461,13 @@ export async function stopRecording(force = false): Promise<void> {
 async function saveRecording(): Promise<void> {
 	const exportPath = getExportPath()
 	if (!exportPath || !recording.startDateTime) {
-		return
-	}
+        return
+    }
 
 	const baseFilePath = generateBaseFilePath(recording.startDateTime, false, undefined, recording.sessionId)
 	if (!baseFilePath) {
-		return
-	}
+        return
+    }
 
 	const session: RecordingSession = {
 		version: '2.0',
@@ -483,16 +479,16 @@ async function saveRecording(): Promise<void> {
 	const jsonContent = JSON.stringify(session, null, 2)
 	const filePath = path.join(exportPath, `${baseFilePath}.json`)
 
-	try {
-		const directory = path.dirname(filePath)
-		if (!fs.existsSync(directory)) {
-			fs.mkdirSync(directory, { recursive: true })
-		}
+        try {
+            const directory = path.dirname(filePath)
+            if (!fs.existsSync(directory)) {
+                fs.mkdirSync(directory, { recursive: true })
+            }
 		await fs.promises.writeFile(filePath, jsonContent)
 		logToOutput(`Recording saved to ${filePath}`, 'info')
-	} catch (err) {
+        } catch (err) {
 		logToOutput(`Failed to save recording: ${err}`, 'error')
-	}
+}
 
 	// Refresh the recordFiles view
 	vscode.commands.executeCommand('crowd-code.refreshRecordFiles')
@@ -502,18 +498,18 @@ async function uploadRecording(): Promise<void> {
 	if (!recording.isRecording) return
 	if (!hasConsent()) return
 	if (typeof CROWD_CODE_API_GATEWAY_URL !== 'string' || !CROWD_CODE_API_GATEWAY_URL.trim()) {
-		return
-	}
+        return
+    }
 
-	const exportPath = getExportPath()
+    const exportPath = getExportPath()
 	if (!exportPath || !recording.startDateTime) {
-		return
-	}
+        return
+    }
 
 	const baseFilePath = generateBaseFilePath(recording.startDateTime, false, undefined, recording.sessionId)
 	if (!baseFilePath) {
-		return
-	}
+        return
+    }
 
 	const session: RecordingSession = {
 		version: '2.0',
@@ -544,64 +540,64 @@ async function uploadRecording(): Promise<void> {
 
 
 export function updateStatusBarItem(): void {
-	if (recording.isRecording) {
-		if (getConfig().get('appearance.showTimer') === false) {
-			statusBarItem.text = '$(debug-stop)'
+    if (recording.isRecording) {
+        if (getConfig().get('appearance.showTimer') === false) {
+            statusBarItem.text = '$(debug-stop)'
 			statusBarItem.tooltip = 'Current time: ' + formatDisplayTime(timer)
 		} else {
 			statusBarItem.text = '$(debug-stop) ' + formatDisplayTime(timer)
-			statusBarItem.tooltip = 'Stop Recording'
-		}
-		statusBarItem.command = commands.stopRecording
-		statusBarItem.show()
-	} else {
-		const editor = vscode.window.activeTextEditor
-		if (!editor) {
-			statusBarItem.hide()
-			return
-		}
-		if (getConfig().get('appearance.minimalMode') === true) {
-			statusBarItem.text = '$(circle-large-filled)'
-		} else {
-			statusBarItem.text = '$(circle-large-filled) Start Recording'
-		}
-		statusBarItem.tooltip = 'Start Recording'
-		statusBarItem.command = commands.startRecording
-		statusBarItem.show()
-	}
+            statusBarItem.tooltip = 'Stop Recording'
+        }
+        statusBarItem.command = commands.stopRecording
+        statusBarItem.show()
+    } else {
+        const editor = vscode.window.activeTextEditor
+        if (!editor) {
+            statusBarItem.hide()
+            return
+        }
+        if (getConfig().get('appearance.minimalMode') === true) {
+            statusBarItem.text = '$(circle-large-filled)'
+        } else {
+            statusBarItem.text = '$(circle-large-filled) Start Recording'
+        }
+        statusBarItem.tooltip = 'Start Recording'
+        statusBarItem.command = commands.startRecording
+        statusBarItem.show()
+    }
 }
 
 
 export function updatePanicButton(): void {
-	if (!recording.isRecording) {
-		if (panicStatusBarItem) {
-			panicStatusBarItem.hide()
-		}
-		return
-	}
+    if (!recording.isRecording) {
+        if (panicStatusBarItem) {
+            panicStatusBarItem.hide()
+        }
+        return
+    }
 
-	if (!panicStatusBarItem) {
+    if (!panicStatusBarItem) {
 		panicStatusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 8999)
-		extContext.subscriptions.push(panicStatusBarItem)
-	}
+        extContext.subscriptions.push(panicStatusBarItem)
+    }
 
 	const secondsToRemove = (panicButtonPressCount + 1) * 10
-	panicStatusBarItem.text = '$(refresh)'
+    panicStatusBarItem.text = '$(refresh)'
 	panicStatusBarItem.tooltip = `Remove last ${secondsToRemove} seconds of recording`
-	panicStatusBarItem.command = commands.panicButton
-	panicStatusBarItem.show()
+    panicStatusBarItem.command = commands.panicButton
+    panicStatusBarItem.show()
 }
 
 export async function panicButton(): Promise<void> {
-	if (!recording.isRecording) {
-		vscode.window.showWarningMessage('No active recording to remove data from')
-		return
-	}
+    if (!recording.isRecording) {
+        vscode.window.showWarningMessage('No active recording to remove data from')
+        return
+    }
 
-	if (!recording.startDateTime) {
-		vscode.window.showErrorMessage('Recording start time not available')
-		return
-	}
+    if (!recording.startDateTime) {
+        vscode.window.showErrorMessage('Recording start time not available')
+        return
+    }
 
 	const secondsToRemove = (panicButtonPressCount + 1) * 10
 	const cutoffTime = Date.now() - (secondsToRemove * 1000)
@@ -618,21 +614,21 @@ export async function panicButton(): Promise<void> {
 		recording.sequence = 0
 	}
 
-	panicButtonPressCount++
-
+        panicButtonPressCount++
+        
 	// Reset timeout
-	if (panicButtonTimeoutId) {
-		clearTimeout(panicButtonTimeoutId)
-	}
-	panicButtonTimeoutId = setTimeout(() => {
-		panicButtonPressCount = 0
-		updatePanicButton()
-	}, PANIC_BUTTON_TIMEOUT)
-
-	updatePanicButton()
-
-	vscode.window.showInformationMessage(
+        if (panicButtonTimeoutId) {
+            clearTimeout(panicButtonTimeoutId)
+        }
+        panicButtonTimeoutId = setTimeout(() => {
+            panicButtonPressCount = 0
+            updatePanicButton()
+        }, PANIC_BUTTON_TIMEOUT)
+        
+        updatePanicButton()
+                
+                vscode.window.showInformationMessage(
 		`Removed ${removedCount} events (last ${secondsToRemove} seconds)`,
-		'Dismiss'
-	)
-}
+                    'Dismiss'
+                )
+            }

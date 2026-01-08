@@ -7,7 +7,6 @@
 export {
 	captureViewportState,
 	captureObservation,
-	captureNow,
 	initializeViewportCapture,
 	cleanupViewportCapture,
 	resetObservationState
@@ -15,13 +14,12 @@ export {
 
 // Terminal capture
 export {
-	getTerminalStates,
-	getTerminalState,
+	getActiveTerminalViewport,
 	initializeTerminalCapture,
 	cleanupTerminalCapture,
 	resetTerminalState
 } from './terminalCapture'
-export type { TerminalCallbacks } from './terminalCapture'
+export type { TerminalCallbacks, TerminalViewport } from './terminalCapture'
 
 // Filesystem watcher
 export {

@@ -1,35 +1,37 @@
 /**
- * Terminal History Capture Module
- * Maintains per-terminal buffers of recent commands and outputs
+ * Terminal Viewport Capture Module
+ * Captures the terminal viewport (last ~TERMINAL_VIEWPORT_LINES lines) to simulate human observation
  */
 
 import * as vscode from 'vscode'
-import type { TerminalState, TerminalEntry } from '../types'
 
-// Configuration
-const MAX_ENTRIES_PER_TERMINAL = 50
-const MAX_OUTPUT_SIZE_BYTES = 100 * 1024 // 100KB per terminal
+const TERMINAL_VIEWPORT_LINES = 20
+const POLL_INTERVAL_MS = 100 // 10Hz
 
-// Per-terminal state storage
-// Key: unique terminal ID (not name, since names can be duplicated)
-const terminalBuffers = new Map<string, TerminalEntry[]>()
+const terminalContent = new Map<string, string>()
 const terminalNames = new Map<string, string>()
 
-// Counter for generating unique terminal IDs when processId is not available
 let terminalIdCounter = 0
 
-// Map vscode.Terminal to our internal ID
 const terminalIdMap = new WeakMap<vscode.Terminal, string>()
 
-// Disposables
+let activeTerminalId: string | null = null
+
+let outputChanging = false
+let terminalViewportChanged = false
+let pollInterval: ReturnType<typeof setInterval> | null = null
+
 let terminalFocusDisposable: vscode.Disposable | null = null
 let terminalExecutionDisposable: vscode.Disposable | null = null
 let terminalCloseDisposable: vscode.Disposable | null = null
 
-// Callbacks for terminal events
-let onTerminalFocusCallback: ((terminalId: string, terminalName: string) => void) | null = null
-let onTerminalCommandCallback: ((terminalId: string, terminalName: string, command: string) => void) | null = null
-let onTerminalOutputCallback: ((terminalId: string, terminalName: string, output: string) => void) | null = null
+let onViewportObservationCallback: ((viewport: TerminalViewport) => void) | null = null
+
+export interface TerminalViewport {
+	id: string
+	name: string
+	viewport: string[]
+}
 
 export interface TerminalCallbacks {
 	onFocus: (terminalId: string, terminalName: string) => void
@@ -37,85 +39,93 @@ export interface TerminalCallbacks {
 	onOutput: (terminalId: string, terminalName: string, output: string) => void
 }
 
+let onTerminalFocusCallback: ((terminalId: string, terminalName: string) => void) | null = null
+let onTerminalCommandCallback: ((terminalId: string, terminalName: string, command: string) => void) | null = null
+let onTerminalOutputCallback: ((terminalId: string, terminalName: string, output: string) => void) | null = null
+
 /**
  * Get or create a unique ID for a terminal
  */
 function getTerminalId(terminal: vscode.Terminal): string {
 	let id = terminalIdMap.get(terminal)
 	if (!id) {
-		// Try to use processId if available, otherwise generate a unique ID
 		id = `terminal-${++terminalIdCounter}`
 		terminalIdMap.set(terminal, id)
 		terminalNames.set(id, terminal.name)
-		terminalBuffers.set(id, [])
+		terminalContent.set(id, '')
 	}
 	return id
 }
 
 /**
- * Add an entry to a terminal's buffer
+ * Extract the terminal viewport
  */
-function addTerminalEntry(terminalId: string, entry: TerminalEntry): void {
-	let buffer = terminalBuffers.get(terminalId)
-	if (!buffer) {
-		buffer = []
-		terminalBuffers.set(terminalId, buffer)
+function extractViewport(terminalId: string): string[] {
+	const content = terminalContent.get(terminalId)
+	if (!content) {
+		return []
 	}
-
-	buffer.push(entry)
-
-	// Enforce max entries limit
-	while (buffer.length > MAX_ENTRIES_PER_TERMINAL) {
-		buffer.shift()
-	}
-
-	// Enforce max size limit
-	let totalSize = 0
-	for (const e of buffer) {
-		totalSize += e.content.length
-	}
-	while (totalSize > MAX_OUTPUT_SIZE_BYTES && buffer.length > 1) {
-		const removed = buffer.shift()
-		if (removed) {
-			totalSize -= removed.content.length
-		}
-	}
+	const lines = content.split('\n')
+	return lines.slice(-TERMINAL_VIEWPORT_LINES)
 }
 
 /**
- * Get the current state of all tracked terminals
+ * Get the active terminal's viewport
+ * Returns null if no terminal is focused
  */
-export function getTerminalStates(): TerminalState[] {
-	const states: TerminalState[] = []
-
-	for (const [id, entries] of terminalBuffers) {
-		const name = terminalNames.get(id) || 'Unknown'
-		states.push({
-			id,
-			name,
-			recentHistory: [...entries] // Return a copy
-		})
+export function getActiveTerminalViewport(): TerminalViewport | null {
+	if (!activeTerminalId) {
+		return null
 	}
 
-	return states
-}
-
-/**
- * Get the state of a specific terminal by ID
- */
-export function getTerminalState(terminalId: string): TerminalState | null {
-	const entries = terminalBuffers.get(terminalId)
-	const name = terminalNames.get(terminalId)
-
-	if (!entries || !name) {
+	const name = terminalNames.get(activeTerminalId)
+	if (!name) {
 		return null
 	}
 
 	return {
-		id: terminalId,
+		id: activeTerminalId,
 		name,
-		recentHistory: [...entries]
+		viewport: extractViewport(activeTerminalId)
 	}
+}
+
+/**
+ * Append content to a terminal's buffer, keeping only the last TERMINAL_VIEWPORT_LINES lines
+ */
+function appendTerminalContent(terminalId: string, content: string): void {
+	const existing = terminalContent.get(terminalId) ?? ''
+	const combined = existing + content
+	const lines = combined.split('\n')
+	
+	if (lines.length > TERMINAL_VIEWPORT_LINES) {
+		terminalContent.set(terminalId, lines.slice(-TERMINAL_VIEWPORT_LINES).join('\n'))
+	} else {
+		terminalContent.set(terminalId, combined)
+	}
+	
+	terminalViewportChanged = true
+}
+
+/**
+ * Poll handler - captures terminal viewport if changed
+ */
+function pollTerminalViewport(): void {
+	if (!activeTerminalId || !outputChanging || !terminalViewportChanged) {
+		return
+	}
+	terminalViewportChanged = false
+
+	if (!onViewportObservationCallback) {
+		return
+	}
+
+	const viewport = getActiveTerminalViewport()
+	if (!viewport) {
+		return
+	}
+
+	onViewportObservationCallback(viewport)
 }
 
 /**
@@ -123,20 +133,31 @@ export function getTerminalState(terminalId: string): TerminalState | null {
  */
 export function initializeTerminalCapture(
 	context: vscode.ExtensionContext,
-	callbacks: TerminalCallbacks
+	callbacks: TerminalCallbacks,
+	onViewportObservation?: (viewport: TerminalViewport) => void
 ): void {
 	onTerminalFocusCallback = callbacks.onFocus
 	onTerminalCommandCallback = callbacks.onCommand
 	onTerminalOutputCallback = callbacks.onOutput
-	// Handle terminal focus changes
+	onViewportObservationCallback = onViewportObservation ?? null
+
 	terminalFocusDisposable = vscode.window.onDidChangeActiveTerminal((terminal) => {
 		if (!terminal) {
+			activeTerminalId = null
 			return
 		}
 
 		const id = getTerminalId(terminal)
 		const name = terminal.name
 		terminalNames.set(id, name)
+		activeTerminalId = id
+
+		if (onViewportObservationCallback) {
+			const viewport = getActiveTerminalViewport()
+			if (viewport) {
+				onViewportObservationCallback(viewport)
+			}
+		}
 
 		if (onTerminalFocusCallback) {
 			onTerminalFocusCallback(id, name)
@@ -144,55 +165,55 @@ export function initializeTerminalCapture(
 	})
 	context.subscriptions.push(terminalFocusDisposable)
 
-	// Handle terminal command execution
 	terminalExecutionDisposable = vscode.window.onDidStartTerminalShellExecution(async (event) => {
 		const terminal = event.terminal
 		const id = getTerminalId(terminal)
 		const name = terminal.name
 		const command = event.execution.commandLine.value
 
-		// Add command to buffer
-		addTerminalEntry(id, {
-			type: 'command',
-			content: command,
-			timestamp: Date.now()
-		})
+		appendTerminalContent(id, `$ ${command}\n`)
 
 		if (onTerminalCommandCallback) {
 			onTerminalCommandCallback(id, name, command)
 		}
 
+		outputChanging = true
+
 		// Read and capture output
 		const stream = event.execution.read()
 		for await (const data of stream) {
-			addTerminalEntry(id, {
-				type: 'output',
-				content: data,
-				timestamp: Date.now()
-			})
+			appendTerminalContent(id, data)
 
 			if (onTerminalOutputCallback) {
 				onTerminalOutputCallback(id, name, data)
 			}
 		}
+
+		outputChanging = false
 	})
 	context.subscriptions.push(terminalExecutionDisposable)
 
-	// Handle terminal close
 	terminalCloseDisposable = vscode.window.onDidCloseTerminal((terminal) => {
 		const id = terminalIdMap.get(terminal)
 		if (id) {
-			// Clean up terminal state
-			terminalBuffers.delete(id)
+			terminalContent.delete(id)
 			terminalNames.delete(id)
+			if (activeTerminalId === id) {
+				activeTerminalId = null
+			}
 		}
 	})
 	context.subscriptions.push(terminalCloseDisposable)
 
-	// Initialize existing terminals
 	for (const terminal of vscode.window.terminals) {
 		getTerminalId(terminal)
 	}
+
+	if (vscode.window.activeTerminal) {
+		activeTerminalId = getTerminalId(vscode.window.activeTerminal)
+	}
+
+	pollInterval = setInterval(pollTerminalViewport, POLL_INTERVAL_MS)
 }
 
 /**
@@ -211,9 +232,16 @@ export function cleanupTerminalCapture(): void {
 		terminalCloseDisposable.dispose()
 		terminalCloseDisposable = null
 	}
+	if (pollInterval) {
+		clearInterval(pollInterval)
+		pollInterval = null
+	}
 
-	terminalBuffers.clear()
+	terminalContent.clear()
 	terminalNames.clear()
+	activeTerminalId = null
+	outputChanging = false
+	terminalViewportChanged = false
 	terminalIdCounter = 0
 }
 
@@ -221,9 +249,8 @@ export function cleanupTerminalCapture(): void {
  * Reset terminal state (useful when starting a new recording)
  */
 export function resetTerminalState(): void {
-	// Keep the terminal ID mappings but clear the buffers
-	for (const [id] of terminalBuffers) {
-		terminalBuffers.set(id, [])
+	for (const id of terminalContent.keys()) {
+		terminalContent.set(id, '')
 	}
+	terminalViewportChanged = false
 }
-

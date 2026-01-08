@@ -21,21 +21,15 @@ export interface ViewportState {
 	cursorPosition: CursorPosition | null
 }
 
-export interface TerminalEntry {
-	type: 'command' | 'output'
-	content: string
-	timestamp: number
-}
-
-export interface TerminalState {
+export interface TerminalViewport {
 	id: string
 	name: string
-	recentHistory: TerminalEntry[]
+	viewport: string[]
 }
 
 export interface Observation {
 	viewport: ViewportState | null
-	activeTerminals: TerminalState[]
+	activeTerminal: TerminalViewport | null
 }
 
 export interface EditDiff {
