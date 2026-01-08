@@ -84,7 +84,7 @@ const subscriptions: vscode.Disposable[] = []
 
 
 function logObservation(observation: Observation): void {
-	if (!recording.isRecording) return
+	if (!recording.isRecording) {return}
 
 	recording.sequence++
 	const event: RecordingEvent = {
@@ -97,7 +97,7 @@ function logObservation(observation: Observation): void {
 }
 
 function logAction(action: Action): void {
-	if (!recording.isRecording) return
+	if (!recording.isRecording) {return}
 
 	recording.sequence++
 	const event: RecordingEvent = {
@@ -127,28 +127,50 @@ export function isCurrentFileExported(): boolean {
     return filename.startsWith(exportPath)
 }
 
+/**
+ * Check if a change range is within the visible viewport
+ * User edits must be within viewport; edits outside are from agents
+ */
+function isChangeWithinViewport(
+	changeRange: vscode.Range,
+	visibleRanges: readonly vscode.Range[]
+): boolean {
+	return visibleRanges.some(visible =>
+		visible.contains(changeRange.start) || visible.contains(changeRange.end)
+	)
+}
 
 function handleTextDocumentChange(event: vscode.TextDocumentChangeEvent): void {
-	if (!recording.isRecording) return
-	if (isCurrentFileExported()) return
+	if (!recording.isRecording) {return}
+	if (isCurrentFileExported()) {return}
+	if (event.document.uri.scheme !== 'file') {return}
 
-    const editor = vscode.window.activeTextEditor
-	if (!editor || event.document !== editor.document) return
+	const editor = vscode.window.activeTextEditor
 
+	// Must be active document to be a user edit
+	if (!editor || event.document !== editor.document) {return}
+
+	const visibleRanges = editor.visibleRanges
 	const file = vscode.workspace.asRelativePath(event.document.fileName)
 
-	lastUserInteractionTime = Date.now()
-	lastUserEditedFile = file
+	for (const change of event.contentChanges) {
+		// Drop changes outside viewport, these will be captured by filesystem watcher
+		if (!isChangeWithinViewport(change.range, visibleRanges)) {
+			continue
+		}
 
-        for (const change of event.contentChanges) {
+		// This is a user edit, record it and set deduplication flag
+		lastUserInteractionTime = Date.now()
+		lastUserEditedFile = file
+
 		const action: EditAction = {
 			kind: 'edit',
 			source: 'user',
 			file,
 			diff: {
-                rangeOffset: change.rangeOffset,
-                rangeLength: change.rangeLength,
-                text: change.text,
+				rangeOffset: change.rangeOffset,
+				rangeLength: change.rangeLength,
+				text: change.text,
 			},
 		}
 
@@ -159,13 +181,13 @@ function handleTextDocumentChange(event: vscode.TextDocumentChangeEvent): void {
 }
 
 function handleSelectionChange(event: vscode.TextEditorSelectionChangeEvent): void {
-	if (!recording.isRecording) return
-	if (event.textEditor !== vscode.window.activeTextEditor) return
-	if (isCurrentFileExported()) return
+	if (!recording.isRecording) {return}
+	if (event.textEditor !== vscode.window.activeTextEditor) {return}
+	if (isCurrentFileExported()) {return}
 
 	const editor = event.textEditor
 	const selection = event.selections[0]
-	if (!selection) return
+	if (!selection) {return}
 
 	const file = vscode.workspace.asRelativePath(editor.document.fileName)
 	const selectedText = editor.document.getText(selection)
@@ -192,9 +214,9 @@ function handleSelectionChange(event: vscode.TextEditorSelectionChangeEvent): vo
 function handleActiveEditorChange(editor: vscode.TextEditor | undefined): void {
 	updateStatusBarItem()
 	
-	if (!recording.isRecording) return
-	if (!editor) return
-	if (isCurrentFileExported()) return
+	if (!recording.isRecording) {return}
+	if (!editor) {return}
+	if (isCurrentFileExported()) {return}
 
 	const file = vscode.workspace.asRelativePath(editor.document.fileName)
 
@@ -212,8 +234,8 @@ function handleActiveEditorChange(editor: vscode.TextEditor | undefined): void {
 }
 
 function handleTerminalFocus(terminalId: string, terminalName: string): void {
-	if (!recording.isRecording) return
-	if (isCurrentFileExported()) return
+	if (!recording.isRecording) {return}
+	if (isCurrentFileExported()) {return}
 
 	const action: TerminalFocusAction = {
 		kind: 'terminal_focus',
@@ -227,8 +249,8 @@ function handleTerminalFocus(terminalId: string, terminalName: string): void {
 }
 
 function handleTerminalCommand(terminalId: string, terminalName: string, command: string): void {
-	if (!recording.isRecording) return
-	if (isCurrentFileExported()) return
+	if (!recording.isRecording) {return}
+	if (isCurrentFileExported()) {return}
 
 	lastUserInteractionTime = Date.now()
 	lastUserEditedFile = null  // Terminal commands can affect any file
@@ -245,8 +267,8 @@ function handleTerminalCommand(terminalId: string, terminalName: string, command
 }
 
 function handleTerminalOutput(terminalId: string, terminalName: string, output: string): void {
-	if (!recording.isRecording) return
-	if (isCurrentFileExported()) return
+	if (!recording.isRecording) {return}
+	if (isCurrentFileExported()) {return}
 
 	const action: TerminalOutputAction = {
 		kind: 'terminal_output',
@@ -261,7 +283,7 @@ function handleTerminalOutput(terminalId: string, terminalName: string, output: 
 }
 
 export function handleFileChange(file: string, changeType: 'create' | 'change' | 'delete', diff: string | null): void {
-	if (!recording.isRecording) return
+	if (!recording.isRecording) {return}
 
 	const relativePath = vscode.workspace.asRelativePath(file)
 
@@ -275,7 +297,7 @@ export function handleFileChange(file: string, changeType: 'create' | 'change' |
 	}
 
 	const gitOperation = getRecentGitOperation()
-	const source = gitOperation ?? 'external'
+	const source = gitOperation ?? 'agent'
 
 	const action: FileChangeAction = {
 		kind: 'file_change',
@@ -289,10 +311,10 @@ export function handleFileChange(file: string, changeType: 'create' | 'change' |
 }
 
 function handleScrollObservation(observation: Observation): void {
-	if (!recording.isRecording) return
+	if (!recording.isRecording) {return}
 	
 	const editor = vscode.window.activeTextEditor
-	if (!editor) return
+	if (!editor) {return}
 
 	const file = vscode.workspace.asRelativePath(editor.document.fileName)
 
@@ -495,8 +517,8 @@ async function saveRecording(): Promise<void> {
 }
 
 async function uploadRecording(): Promise<void> {
-	if (!recording.isRecording) return
-	if (!hasConsent()) return
+	if (!recording.isRecording) {return}
+	if (!hasConsent()) {return}
 	if (typeof CROWD_CODE_API_GATEWAY_URL !== 'string' || !CROWD_CODE_API_GATEWAY_URL.trim()) {
         return
     }

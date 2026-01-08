@@ -6,7 +6,7 @@
 
 export type ConsentStatus = 'pending' | 'accepted' | 'declined'
 
-export type ActionSource = 'user' | 'external' | 'git' | 'git_checkout'
+export type ActionSource = 'user' | 'agent' | 'git' | 'git_checkout'
 
 export interface CursorPosition {
 	line: number
