@@ -8,6 +8,7 @@ import * as fs from 'node:fs'
 import * as path from 'node:path'
 import * as vscode from 'vscode'
 import axios from 'axios'
+import { createTwoFilesPatch } from 'diff'
 import { hasConsent } from './consent'
 import {
     notificationWithProgress,
@@ -73,11 +74,14 @@ let panicButtonTimeoutId: NodeJS.Timeout | undefined
 
 const CROWD_CODE_API_GATEWAY_URL = process.env.CROWD_CODE_API_GATEWAY_URL
 const PANIC_BUTTON_TIMEOUT = 3000
-const USER_INTERACTION_WINDOW_MS = 2000 // 2 seconds
+const MAX_BUFFER_SIZE_PER_FILE = 1000 // Prevent unbounded growth
 
-// Track last user interaction for deduplication
-let lastUserInteractionTime = 0
-let lastUserEditedFile: string | null = null
+interface PendingEdit {
+	rangeOffset: number
+	rangeLength: number
+	text: string
+}
+const pendingUserEdits = new Map<string, PendingEdit[]>()
 
 // Disposables for event subscriptions
 const subscriptions: vscode.Disposable[] = []
@@ -140,6 +144,50 @@ function isChangeWithinViewport(
 	)
 }
 
+/**
+ * Apply user edits to content to reconstruct what the file would look like
+ * if only the user had edited it (no agent changes)
+ */
+function applyUserEdits(content: string, edits: PendingEdit[]): string {
+	// Sort by offset descending to apply from end to start (preserves earlier offsets)
+	const sorted = [...edits].sort((a, b) => b.rangeOffset - a.rangeOffset)
+
+	let result = content
+	for (const edit of sorted) {
+		result = result.slice(0, edit.rangeOffset)
+			+ edit.text
+			+ result.slice(edit.rangeOffset + edit.rangeLength)
+	}
+	return result
+}
+
+/**
+ * Compute the agent-only diff by comparing user baseline to actual new content
+ */
+function computeAgentOnlyDiff(
+	oldContent: string,
+	newContent: string,
+	userEdits: PendingEdit[],
+	filePath: string
+): string | null {
+	const userBaseline = applyUserEdits(oldContent, userEdits)
+
+	if (userBaseline === newContent) {
+		return null // No agent changes
+	}
+
+	const fileName = path.basename(filePath)
+	return createTwoFilesPatch(
+		`a/${fileName}`,
+		`b/${fileName}`,
+		userBaseline,
+		newContent,
+		'',
+		'',
+		{ context: 3 }
+	)
+}
+
 function handleTextDocumentChange(event: vscode.TextDocumentChangeEvent): void {
 	if (!recording.isRecording) {return}
 	if (isCurrentFileExported()) {return}
@@ -159,10 +207,7 @@ function handleTextDocumentChange(event: vscode.TextDocumentChangeEvent): void {
 			continue
 		}
 
-		// This is a user edit, record it and set deduplication flag
-		lastUserInteractionTime = Date.now()
-		lastUserEditedFile = file
-
+		// This is a user edit, record it
 		const action: EditAction = {
 			kind: 'edit',
 			source: 'user',
@@ -175,6 +220,18 @@ function handleTextDocumentChange(event: vscode.TextDocumentChangeEvent): void {
 		}
 
 		logObservationAndAction(action)
+
+		// Add to pending edits buffer for correlation with FS_CHANGE
+		const pendingEdit: PendingEdit = {
+			rangeOffset: change.rangeOffset,
+			rangeLength: change.rangeLength,
+			text: change.text,
+		}
+		const edits = pendingUserEdits.get(file) ?? []
+		if (edits.length < MAX_BUFFER_SIZE_PER_FILE) {
+			edits.push(pendingEdit)
+			pendingUserEdits.set(file, edits)
+		}
 	}
 
 	actionsProvider.setCurrentFile(event.document.fileName)
@@ -252,9 +309,6 @@ function handleTerminalCommand(terminalId: string, terminalName: string, command
 	if (!recording.isRecording) {return}
 	if (isCurrentFileExported()) {return}
 
-	lastUserInteractionTime = Date.now()
-	lastUserEditedFile = null  // Terminal commands can affect any file
-
 	const action: TerminalCommandAction = {
 		kind: 'terminal_command',
 		source: 'user',
@@ -282,32 +336,78 @@ function handleTerminalOutput(terminalId: string, terminalName: string, output: 
 	logAction(action)
 }
 
-export function handleFileChange(file: string, changeType: 'create' | 'change' | 'delete', diff: string | null): void {
+export function handleFileChange(
+	file: string,
+	changeType: 'create' | 'change' | 'delete',
+	oldContent: string | null,
+	newContent: string | null
+): void {
 	if (!recording.isRecording) {return}
 
 	const relativePath = vscode.workspace.asRelativePath(file)
 
-	// Skip if this is a side effect of a recent user interaction
-	const timeSinceLastInteraction = Date.now() - lastUserInteractionTime
-	const isWithinWindow = timeSinceLastInteraction < USER_INTERACTION_WINDOW_MS
-	const isUserCausedChange = isWithinWindow && (lastUserEditedFile === null || lastUserEditedFile === relativePath)
+	// Helper to compute full diff
+	const computeFullDiff = (): string | null => {
+		if (!oldContent && !newContent) {return null}
+		if (oldContent === newContent) {return null}
+		const fileName = path.basename(file)
+		return createTwoFilesPatch(
+			`a/${fileName}`,
+			`b/${fileName}`,
+			oldContent ?? '',
+			newContent ?? '',
+			'',
+			'',
+			{ context: 3 }
+		)
+	}
 
-	if (isUserCausedChange) {
+	// Check for git operation first
+	const gitOperation = getRecentGitOperation()
+	if (gitOperation) {
+		pendingUserEdits.clear() // Flush entire buffer, git can affect many files
+		const action: FileChangeAction = {
+			kind: 'file_change',
+			source: gitOperation,
+			file: relativePath,
+			changeType,
+			diff: computeFullDiff(),
+		}
+		logObservationAndAction(action)
 		return
 	}
 
-	const gitOperation = getRecentGitOperation()
-	const source = gitOperation ?? 'agent'
+	// Get and clear pending user edits for this file
+	const pending = pendingUserEdits.get(relativePath)
+	pendingUserEdits.delete(relativePath)
 
-	const action: FileChangeAction = {
-		kind: 'file_change',
-		source,
-		file: relativePath,
-		changeType,
-		diff,
+	// If no pending edits or missing content, record full diff as agent
+	if (!pending || pending.length === 0 || !oldContent || !newContent) {
+		const action: FileChangeAction = {
+			kind: 'file_change',
+			source: 'agent',
+			file: relativePath,
+			changeType,
+			diff: computeFullDiff(),
+		}
+		logObservationAndAction(action)
+		return
 	}
 
-	logObservationAndAction(action)
+	// Three-way diff: compute agent-only changes
+	const agentDiff = computeAgentOnlyDiff(oldContent, newContent, pending, file)
+
+	// Only record if there's remaining agent diff
+	if (agentDiff) {
+		const action: FileChangeAction = {
+			kind: 'file_change',
+			source: 'agent',
+			file: relativePath,
+			changeType,
+			diff: agentDiff,
+		}
+		logObservationAndAction(action)
+	}
 }
 
 function handleScrollObservation(observation: Observation): void {
@@ -368,6 +468,7 @@ export async function startRecording(): Promise<void> {
 	resetObservationState()
 	resetTerminalState()
 	resetFilesystemState()
+	pendingUserEdits.clear()
 
 	// Create recording folder
 	const baseFilePath = generateBaseFilePath(recording.startDateTime, false, undefined, recording.sessionId)

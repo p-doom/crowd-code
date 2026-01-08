@@ -6,15 +6,18 @@
 import * as vscode from 'vscode'
 import * as fs from 'node:fs'
 import * as path from 'node:path'
-import { createTwoFilesPatch } from 'diff'
 import ignore, { type Ignore } from 'ignore'
 import { LRUCache } from 'lru-cache'
 
 // Configuration
-const DEBOUNCE_WINDOW_MS = 500
 const MAX_CACHE_SIZE = 5000
 
-export type FileChangeCallback = (file: string, changeType: 'create' | 'change' | 'delete', diff: string | null) => void
+export type FileChangeCallback = (
+	file: string,
+	changeType: 'create' | 'change' | 'delete',
+	oldContent: string | null,
+	newContent: string | null
+) => void
 
 let fileChangeCallback!: FileChangeCallback
 
@@ -24,12 +27,6 @@ let workspaceFolder: vscode.WorkspaceFolder | null = null
 
 // File content cache for diff computation (using lru-cache)
 const fileCache = new LRUCache<string, string>({ max: MAX_CACHE_SIZE })
-
-// Debounce tracking
-const pendingChanges = new Map<string, {
-	type: 'create' | 'change' | 'delete'
-	timeout: NodeJS.Timeout
-}>()
 
 // Filesystem watcher
 let fileWatcher: vscode.FileSystemWatcher | null = null
@@ -88,39 +85,6 @@ async function shouldTrackFile(filePath: string): Promise<boolean> {
 }
 
 /**
- * Compute a unified diff between old and new content
- * Returns a string representation of the changes in unified diff format
- */
-function computeDiff(oldContent: string | null, newContent: string | null, filePath?: string): string | null {
-	if (oldContent === null && newContent === null) {
-		return null
-	}
-
-	if (oldContent === newContent) {
-		return null
-	}
-
-	const fileName = filePath ? path.basename(filePath) : 'file'
-	const oldStr = oldContent ?? ''
-	const newStr = newContent ?? ''
-
-	// createTwoFilesPatch produces a standard unified diff
-	const patch = createTwoFilesPatch(
-		`a/${fileName}`,
-		`b/${fileName}`,
-		oldStr,
-		newStr,
-		'',
-		'',
-		{ context: 3 }
-	)
-
-	return patch
-}
-
-
-
-/**
  * Read file content safely
  */
 async function readFileContent(filePath: string): Promise<string | null> {
@@ -134,7 +98,7 @@ async function readFileContent(filePath: string): Promise<string | null> {
 
 
 /**
- * Process a file change event (after debounce)
+ * Process a file change event
  */
 async function processFileChange(
 	filePath: string,
@@ -149,8 +113,9 @@ async function processFileChange(
 	}
 
 	if (changeType === 'delete') {
+		const oldContent = fileCache.get(filePath) ?? null
 		fileCache.delete(filePath)
-		fileChangeCallback(filePath, changeType, null)
+		fileChangeCallback(filePath, changeType, oldContent, null)
 		return
 	}
 
@@ -160,16 +125,17 @@ async function processFileChange(
 		return
 	}
 
-	const diff = computeDiff(oldContent, newContent, filePath)
-	fileCache.set(filePath, newContent)
-
-	if (diff !== null || changeType === 'create') {
-		fileChangeCallback(filePath, changeType, diff)
+	// Check if content actually changed
+	if (oldContent === newContent && changeType !== 'create') {
+		return
 	}
+
+	fileCache.set(filePath, newContent)
+	fileChangeCallback(filePath, changeType, oldContent, newContent)
 }
 
 /**
- * Handle a file system event with debouncing
+ * Handle a file system event
  */
 function handleFileEvent(uri: vscode.Uri, eventType: 'create' | 'change' | 'delete'): void {
 	const filePath = uri.fsPath
@@ -178,20 +144,7 @@ function handleFileEvent(uri: vscode.Uri, eventType: 'create' | 'change' | 'dele
 		return
 	}
 
-	const pending = pendingChanges.get(filePath)
-	if (pending) {
-		clearTimeout(pending.timeout)
-	}
-
-	const timeout = setTimeout(() => {
-		pendingChanges.delete(filePath)
-		processFileChange(filePath, eventType)
-	}, DEBOUNCE_WINDOW_MS)
-
-	pendingChanges.set(filePath, {
-		type: eventType,
-		timeout
-	})
+	processFileChange(filePath, eventType)
 }
 
 /**
@@ -257,12 +210,6 @@ export function cleanupFilesystemWatcher(): void {
 		fileWatcher.dispose()
 		fileWatcher = null
 	}
-
-	// Clear pending changes
-	for (const [, pending] of pendingChanges) {
-		clearTimeout(pending.timeout)
-	}
-	pendingChanges.clear()
 }
 
 /**
@@ -270,11 +217,5 @@ export function cleanupFilesystemWatcher(): void {
  */
 export function resetFilesystemState(): void {
 	fileCache.clear()
-
-	// Clear pending changes
-	for (const [, pending] of pendingChanges) {
-		clearTimeout(pending.timeout)
-	}
-	pendingChanges.clear()
 }
 
