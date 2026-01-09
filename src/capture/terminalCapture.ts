@@ -175,6 +175,10 @@ export function initializeTerminalCapture(
 		const name = terminal.name
 		const command = event.execution.commandLine.value
 
+		const existing = terminalContent.get(id) ?? ''
+		if (existing.length > 0 && !existing.endsWith('\n')) {
+			appendTerminalContent(id, '\n')
+		}
 		appendTerminalContent(id, `$ ${command}\n`)
 
 		if (onTerminalCommandCallback) {
