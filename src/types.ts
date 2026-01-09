@@ -38,11 +38,14 @@ export interface EditDiff {
 	text: string
 }
 
+export type EditReason = 'undo' | 'redo' | undefined
+
 export interface EditAction {
 	kind: 'edit'
 	source: ActionSource
 	file: string
 	diff: EditDiff
+	reason?: EditReason
 }
 
 export interface SelectionAction {

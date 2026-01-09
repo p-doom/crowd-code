@@ -26,6 +26,7 @@ import type {
 	Observation,
 	Action,
 	EditAction,
+	EditReason,
 	SelectionAction,
 	TabSwitchAction,
 	TerminalFocusAction,
@@ -205,6 +206,13 @@ function handleTextDocumentChange(event: vscode.TextDocumentChangeEvent): void {
 	const visibleRanges = editor.visibleRanges
 	const file = vscode.workspace.asRelativePath(event.document.fileName)
 
+	let reason: EditReason
+	if (event.reason === vscode.TextDocumentChangeReason.Undo) {
+		reason = 'undo'
+	} else if (event.reason === vscode.TextDocumentChangeReason.Redo) {
+		reason = 'redo'
+	}
+
 	for (const change of event.contentChanges) {
 		// Drop changes outside viewport, these will be captured by filesystem watcher
 		if (!isChangeWithinViewport(change.range, visibleRanges)) {
@@ -221,6 +229,7 @@ function handleTextDocumentChange(event: vscode.TextDocumentChangeEvent): void {
 				rangeLength: change.rangeLength,
 				text: change.text,
 			},
+			reason,
 		}
 
 		// Log action only (observation will be captured by handleSelectionChange)
