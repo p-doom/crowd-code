@@ -44,7 +44,7 @@ import {
 	initializeFilesystemWatcher,
 	resetFilesystemState,
 } from './capture'
-import { getRecentGitOperation } from './gitProvider'
+import { getRecentGitOperation, resetGitState } from './gitProvider'
 
 export const recording: RecordingState = {
 	isRecording: false,
@@ -476,6 +476,7 @@ export async function startRecording(): Promise<void> {
 	resetObservationState()
 	resetTerminalState()
 	resetFilesystemState()
+	resetGitState()
 	pendingUserEdits.clear()
 
 	// Create recording folder

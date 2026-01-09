@@ -254,4 +254,5 @@ export function resetTerminalState(): void {
 		terminalContent.set(id, '')
 	}
 	terminalViewportChanged = false
+	outputChanging = false
 }

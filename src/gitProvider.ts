@@ -106,10 +106,17 @@ export function initializeGitProvider(context: vscode.ExtensionContext): void {
 }
 
 /**
+ * Reset git state
+ */
+export function resetGitState(): void {
+	sawHeadChange = false
+	lastGitOperationTime = 0
+}
+
+/**
  * Cleanup the git provider
  */
 export function cleanupGitProvider(): void {
 	disposeWatchers()
-	sawHeadChange = false
-	lastGitOperationTime = 0
+	resetGitState()
 }
