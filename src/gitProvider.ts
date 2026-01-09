@@ -9,7 +9,7 @@ import { logToOutput } from './utilities'
 // Track recent git operations for filesystem change attribution
 let sawHeadChange = false
 let lastGitOperationTime = 0
-const GIT_OPERATION_WINDOW_MS = 5000
+const GIT_OPERATION_WINDOW_MS = 500
 
 // File system watchers
 let gitHeadWatcher: vscode.FileSystemWatcher | undefined
