@@ -32,7 +32,6 @@ import type {
 	TerminalCommandAction,
 	TerminalOutputAction,
 	FileChangeAction,
-	ScrollAction,
 } from './types'
 import { extContext, statusBarItem, actionsProvider } from './extension'
 import {
@@ -412,20 +411,11 @@ export function handleFileChange(
 
 function handleScrollObservation(observation: Observation): void {
 	if (!recording.isRecording) {return}
-	
+
 	const editor = vscode.window.activeTextEditor
 	if (!editor) {return}
 
-	const file = vscode.workspace.asRelativePath(editor.document.fileName)
-
 	logObservation(observation)
-
-	const action: ScrollAction = {
-		kind: 'scroll',
-		source: 'user',
-		file,
-	}
-	logAction(action)
 }
 
 function createRecordingFolder(folderPath: string): void {

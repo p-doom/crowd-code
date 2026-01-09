@@ -92,12 +92,6 @@ export interface FileChangeAction {
 	diff: string | null
 }
 
-export interface ScrollAction {
-	kind: 'scroll'
-	source: ActionSource
-	file: string
-}
-
 export type Action =
 	| EditAction
 	| SelectionAction
@@ -106,7 +100,6 @@ export type Action =
 	| TerminalCommandAction
 	| TerminalOutputAction
 	| FileChangeAction
-	| ScrollAction
 
 export interface ObservationEvent {
 	sequence: number
