@@ -141,6 +141,10 @@ export function initializeTerminalCapture(
 	onTerminalOutputCallback = callbacks.onOutput
 	onViewportObservationCallback = onViewportObservation ?? null
 
+	if (terminalExecutionDisposable) {
+		return
+	}
+
 	terminalFocusDisposable = vscode.window.onDidChangeActiveTerminal((terminal) => {
 		if (!terminal) {
 			activeTerminalId = null
