@@ -156,11 +156,8 @@ function isChangeWithinViewport(
  * if only the user had edited it (no agent changes)
  */
 function applyUserEdits(content: string, edits: PendingEdit[]): string {
-	// Sort by offset descending to apply from end to start (preserves earlier offsets)
-	const sorted = [...edits].sort((a, b) => b.rangeOffset - a.rangeOffset)
-
 	let result = content
-	for (const edit of sorted) {
+	for (const edit of edits) {
 		result = result.slice(0, edit.rangeOffset)
 			+ edit.text
 			+ result.slice(edit.rangeOffset + edit.rangeLength)

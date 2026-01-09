@@ -178,10 +178,6 @@ export async function initializeFilesystemWatcher(
 ): Promise<void> {
 	fileChangeCallback = onFileChange
 
-	if (fileWatcher) {
-		return
-	}
-
 	const folder = vscode.workspace.workspaceFolders?.[0]
 	if (!folder) {
 		return
@@ -190,6 +186,10 @@ export async function initializeFilesystemWatcher(
 	loadGitignore()
 
 	initializeCacheBackground()
+
+	if (fileWatcher) {
+		return
+	}
 
 	fileWatcher = vscode.workspace.createFileSystemWatcher(
 		new vscode.RelativePattern(folder, '**/*')
