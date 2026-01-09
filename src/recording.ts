@@ -83,6 +83,10 @@ interface PendingEdit {
 }
 const pendingUserEdits = new Map<string, PendingEdit[]>()
 
+// Flag to track pending edit observation (set by handleTextDocumentChange, cleared by handleSelectionChange)
+// This coordinates the two handlers: edit logs action, then selection captures observation
+let pendingEditFile: string | null = null
+
 // Disposables for event subscriptions
 const subscriptions: vscode.Disposable[] = []
 
@@ -222,7 +226,10 @@ function handleTextDocumentChange(event: vscode.TextDocumentChangeEvent): void {
 			},
 		}
 
-		logActionAndObservation(action)
+		// Log action only (observation will be captured by handleSelectionChange)
+		// when VS Code fires onDidChangeTextEditorSelection (after visibleRanges and selection are updated VS-Code-internally)
+		logAction(action)
+		pendingEditFile = file
 
 		// Add to pending edits buffer for correlation with FS_CHANGE
 		const pendingEdit: PendingEdit = {
@@ -250,6 +257,20 @@ function handleSelectionChange(event: vscode.TextEditorSelectionChangeEvent): vo
 	if (!selection) {return}
 
 	const file = vscode.workspace.asRelativePath(editor.document.fileName)
+
+	// Check if this selection change is completing a pending edit action
+	// This means that this selection event is simply a consequence of an edit event
+	// VS Code fires: onDidChangeTextDocument → onDidChangeTextEditorSelection
+	// We logged the edit action earlier, now capture the observation with correct state
+	if (pendingEditFile === file) {
+		pendingEditFile = null
+		logObservation(captureObservation())
+		resetViewportChanged()
+		actionsProvider.setCurrentFile(editor.document.fileName)
+		return
+	}
+
+	// This is an intentional navigation (click, arrow keys, search, etc.)
 	const selectedText = editor.document.getText(selection)
 
 	const action: SelectionAction = {
@@ -455,6 +476,7 @@ export async function startRecording(): Promise<void> {
 	recording.events = []
 	recording.sessionId = vscode.env.sessionId
 	previousFile = null
+	pendingEditFile = null
 	panicButtonPressCount = 0
 	timer = 0
 
