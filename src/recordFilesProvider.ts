@@ -20,10 +20,6 @@ export class RecordFile extends vscode.TreeItem {
 			// Set different icons based on file extension
 			if (label.endsWith('.json')) {
 				this.iconPath = new vscode.ThemeIcon('json')
-			} else if (label.endsWith('.srt')) {
-				this.iconPath = new vscode.ThemeIcon('symbol-text')
-			} else if (label.endsWith('.csv')) {
-				this.iconPath = new vscode.ThemeIcon('table')
 			} else {
 				this.iconPath = new vscode.ThemeIcon('file')
 			}
@@ -70,14 +66,14 @@ export class RecordFilesProvider implements vscode.TreeDataProvider<RecordFile> 
 						// Check if the directory contains recording files
 						const dirContents = fs.readdirSync(itemPath)
 						const hasRecordingFiles = dirContents.some(
-							file => file === 'source.csv' || file === 'recording.json' || file === 'recording.srt'
+							file => file.endsWith('.json')
 						)
 						if (hasRecordingFiles) {
 							folders.push(
 								new RecordFile(item, vscode.TreeItemCollapsibleState.Collapsed, undefined, true)
 							)
 						}
-					} else if (item.endsWith('.json') || item.endsWith('.srt') || item.endsWith('.csv')) {
+					} else if (item.endsWith('.json')) {
 						files.push(
 							new RecordFile(item, vscode.TreeItemCollapsibleState.None, {
 								command: 'vscode.open',
@@ -99,7 +95,7 @@ export class RecordFilesProvider implements vscode.TreeDataProvider<RecordFile> 
 			const folderPath = path.join(exportPath, element.label)
 			const files = fs
 				.readdirSync(folderPath)
-				.filter(file => file.endsWith('.json') || file.endsWith('.srt') || file.endsWith('.csv'))
+				.filter(file => file.endsWith('.json'))
 				.map(
 					file =>
 						new RecordFile(

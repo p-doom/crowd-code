@@ -1,7 +1,6 @@
 {
 	"crowdCode.export.exportPath": "${workspaceFolder}/crowd-code/",
 	"crowdCode.export.createPathOutsideWorkspace": false,
-	"crowdCode.export.exportFormats": ["JSON", "SRT"],
 	"crowdCode.appearance.minimalMode": false,
 	"crowdCode.appearance.showTimer": true
 }

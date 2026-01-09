@@ -87,16 +87,19 @@ suite('Recording Tests', () => {
 		)
 	})
 
-	test('Should create CSV file when recording starts', async () => {
+	test('Should create recording folder when recording starts', async () => {
 		await vscode.commands.executeCommand(`${extensionName}.startRecording`)
 
-		// Wait for file creation
+		// Wait for folder creation
 		await waitMs(1000)
 
-		const files = fs.readdirSync(workspaceFolder)
-		const csvFile = files.find(file => file.endsWith('.csv'))
+		const items = fs.readdirSync(workspaceFolder)
+		const recordingFolder = items.find(item => {
+			const itemPath = path.join(workspaceFolder, item)
+			return fs.statSync(itemPath).isDirectory() && item.startsWith('crowd-code-')
+		})
 
-		assert.ok(csvFile, 'CSV file should be created')
+		assert.ok(recordingFolder, 'Recording folder should be created')
 
 		// Cleanup
 		await vscode.commands.executeCommand(`${extensionName}.stopRecording`)
@@ -115,110 +118,7 @@ suite('Recording Tests', () => {
 		assert.strictEqual(statusBarSpy.tooltip?.toString().includes('Start Recording'), true)
 	})
 
-	test('Should not generate output files when stopping recording', async () => {
-		// Configure export formats (none)
-		await getConfig().update('exportFormats', [])
-
-		// Start and stop recording
-		await vscode.commands.executeCommand(`${extensionName}.startRecording`)
-		await waitMs(1000)
-		await vscode.commands.executeCommand(`${extensionName}.stopRecording`)
-		await waitMs()
-
-		// Check for output files
-		const files = fs.readdirSync(workspaceFolder)
-		const jsonFile = files.find(file => file.endsWith('.json'))
-		const srtFile = files.find(file => file.endsWith('.srt'))
-
-		assert.ok(!jsonFile, 'JSON file should NOT be created')
-		assert.ok(!srtFile, 'SRT file should NOT be created')
-	})
-
-	test('Should generate JSON output file when stopping recording', async () => {
-		// Configure export formats
-		await getConfig().update('exportFormats', ['JSON'])
-
-		// Start and stop recording
-		await vscode.commands.executeCommand(`${extensionName}.startRecording`)
-		await waitMs(1000)
-		await vscode.commands.executeCommand(`${extensionName}.stopRecording`)
-		await waitMs()
-
-		// Check for output files
-		const files = fs.readdirSync(workspaceFolder)
-		const jsonFile = files.find(file => file.endsWith('.json'))
-		const srtFile = files.find(file => file.endsWith('.srt'))
-
-		assert.ok(jsonFile, 'JSON file should be created')
-		assert.ok(!srtFile, 'SRT file should NOT be created')
-	})
-
-	test('Should generate SRT output file when stopping recording', async () => {
-		// Configure export formats
-		await getConfig().update('exportFormats', ['SRT'])
-
-		// Start and stop recording
-		await vscode.commands.executeCommand(`${extensionName}.startRecording`)
-		await waitMs(1000)
-		await vscode.commands.executeCommand(`${extensionName}.stopRecording`)
-		await waitMs()
-
-		// Check for output files
-		const files = fs.readdirSync(workspaceFolder)
-		const jsonFile = files.find(file => file.endsWith('.json'))
-		const srtFile = files.find(file => file.endsWith('.srt'))
-
-		assert.ok(!jsonFile, 'JSON file should NOT be created')
-		assert.ok(srtFile, 'SRT file should be created')
-	})
-
-	test('Should generate output files (JSON, SRT) when stopping recording', async () => {
-		// Configure export formats
-		await getConfig().update('exportFormats', ['JSON', 'SRT'])
-
-		// Start and stop recording
-		await vscode.commands.executeCommand(`${extensionName}.startRecording`)
-		await waitMs(1000)
-		await vscode.commands.executeCommand(`${extensionName}.stopRecording`)
-		await waitMs()
-
-		// Check for output files
-		const files = fs.readdirSync(workspaceFolder)
-		const jsonFile = files.find(file => file.endsWith('.json'))
-		const srtFile = files.find(file => file.endsWith('.srt'))
-
-		assert.ok(jsonFile, 'JSON file should be created')
-		assert.ok(srtFile, 'SRT file should be created')
-	})
-
-	const testCsvFile = (csvPath: string, expectedLines: string[]) => {
-		const csvContent = fs.readFileSync(csvPath, 'utf-8')
-		const lines = csvContent.split('\n').filter(line => line.trim() !== '')
-
-		assert.strictEqual(
-			lines.length,
-			expectedLines.length,
-			'Number of lines in CSV file should match expected lines'
-		)
-
-		for (let i = 0; i < lines.length; i++) {
-			const line = lines[i]
-			let expectedLine = expectedLines[i]
-
-			const timestampIndex = expectedLine.indexOf('%n')
-			if (timestampIndex !== -1) {
-				const commaIndex = expectedLine.indexOf(',', timestampIndex + 1)
-				expectedLine = expectedLine.replace('%n', line.substring(0, commaIndex))
-			}
-			assert.strictEqual(
-				lines[i],
-				expectedLines[i],
-				`Line ${i + 1} in CSV file should match expected line`
-			)
-		}
-	}
-
-	test('Should record file changes and verify exports', async () => {
+	test('Should record file changes and verify JSON export', async () => {
 		// Create and write to new file using VS Code API
 		const testFileUri = vscode.Uri.file(path.join(workspaceFolder, 'test.txt'))
 		const initialContent = 'This is an example recording'
@@ -230,31 +130,13 @@ suite('Recording Tests', () => {
 
 		// Start recording
 		await vscode.commands.executeCommand(`${extensionName}.startRecording`)
-		await waitMs()
+		await waitMs(1000)
 
-		// Get CSV path
-		const csvFilename = fs.readdirSync(workspaceFolder).find(f => f.endsWith('.csv'))
-
-		assert.strictEqual(csvFilename !== undefined, true, 'CSV file should be created')
-
-		if (csvFilename === undefined) {
-			return
-		}
-		const csvPath = path.join(workspaceFolder, csvFilename)
-
-		const csvExpectedLines = [
-			'Sequence,Time,File,RangeOffset,RangeLength,Text,Language,Type',
-			'1,%n,"test.txt",0,0,"",plaintext,tab',
-		]
-		testCsvFile(csvPath, csvExpectedLines)
-
+		// Make edits
 		await editor.edit(editBuilder => {
 			editBuilder.insert(new vscode.Position(0, 0), initialContent)
 		})
 		await waitMs(1000)
-
-		csvExpectedLines.push('2,%n,"test.txt",0,0,"This is an example recording",plaintext,content')
-		testCsvFile(csvPath, csvExpectedLines)
 
 		// Select text to remove
 		const textToRemove = 'n example'
@@ -270,30 +152,31 @@ suite('Recording Tests', () => {
 		})
 		await waitMs(1000)
 
-		csvExpectedLines.push('3,%n,"test.txt",0,0,"This is a recording",plaintext,content')
-		testCsvFile(csvPath, csvExpectedLines)
-
 		// Stop recording and wait for export
 		await vscode.commands.executeCommand(`${extensionName}.stopRecording`)
 		await waitMs(1000)
 
-		// Verify exports
-		const files = fs.readdirSync(workspaceFolder)
+		// Verify JSON export
+		const items = fs.readdirSync(workspaceFolder)
+		const recordingFolder = items.find(item => {
+			const itemPath = path.join(workspaceFolder, item)
+			return fs.statSync(itemPath).isDirectory() && item.startsWith('crowd-code-')
+		})
+
+		assert.ok(recordingFolder, 'Recording folder should be created')
+
+		const recordingFolderPath = path.join(workspaceFolder, recordingFolder)
+		const files = fs.readdirSync(recordingFolderPath)
 		const jsonFile = files.find(f => f.endsWith('.json'))
-		const srtFile = files.find(f => f.endsWith('.srt'))
 
-		if (jsonFile) {
-			const jsonContent = JSON.parse(fs.readFileSync(path.join(workspaceFolder, jsonFile), 'utf-8'))
-			// biome-ignore lint/suspicious/noExplicitAny: <explanation>
-			assert.ok(jsonContent.some((change: any) => change.text.includes(initialContent)))
-			// biome-ignore lint/suspicious/noExplicitAny: <explanation>
-			assert.ok(jsonContent.some((change: any) => change.text.includes('This is a recording')))
-		}
-
-		if (srtFile) {
-			const srtContent = fs.readFileSync(path.join(workspaceFolder, srtFile), 'utf-8')
-			assert.ok(srtContent.includes(initialContent))
-			assert.ok(srtContent.includes('This is a recording'))
-		}
+		assert.ok(jsonFile, 'JSON file should be created')
+		
+		const jsonContent = JSON.parse(fs.readFileSync(path.join(recordingFolderPath, jsonFile), 'utf-8'))
+		assert.strictEqual(jsonContent.version, '2.0', 'JSON should have version 2.0')
+		assert.ok(Array.isArray(jsonContent.events), 'JSON should have events array')
+		
+		// Verify recording captured the text changes
+		const editEvents = jsonContent.events.filter((event: any) => event.action?.type === 'edit')
+		assert.ok(editEvents.length > 0, 'Should have edit events')
 	})
 })

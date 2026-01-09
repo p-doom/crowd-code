@@ -41,11 +41,10 @@ Additionally, you can control the recording in three ways:
    - Enable/disable participation in crowd-sourcing the dataset
 3. Using the panic button: Click on "Panic button" to remove the last few actions from the captured dataset. This is useful to immediately remove sensitive data from the dataset.
 
-The extension will automatically record changes in your text editor. When you stop the recording, it will finalize the data and save it to a CSV (source), JSON and SRT files.
+The extension will automatically record changes in your text editor. When you stop the recording, it will finalize the data and save it to a JSON file.
 
 You can customize the recording experience with these features:
 
-- Choose the export formats (SRT or JSON or both)
 - Set custom names for recording folders
 - Automatically add the export path to .gitignore
 
@@ -67,9 +66,7 @@ Your trust means a lot to us, and we will take great care in anonymizing the dat
 
 ## 📄 Output
 
-The recorded changes are saved in a CSV file in your workspace.
-
-Then, this file is processed to generate output files in SRT and JSON formats, providing a detailed and accessible log of your coding session.
+The recorded changes are saved in a JSON file at the configured export path (default: `${TMPDIR}/crowd-code/`), providing a detailed and accessible log of your coding session.
 
 ## ▶️ Play it back!
 
@@ -91,10 +88,6 @@ Playback is a feature by the upstream repository. We have not tested playback us
 - `crowdCode.export.addToGitignore`: Add the export path to .gitignore when creating the folder
 
   Default: `false`
-
-- `crowdCode.export.exportFormats`: Enabled export formats (SRT or JSON or both)
-
-  Default: `["JSON", "SRT"]`
 
 - `crowdCode.recording.askFolderName`: Ask for a custom folder name before starting a recording
 
