@@ -36,12 +36,10 @@ export interface TerminalViewport {
 export interface TerminalCallbacks {
 	onFocus: (terminalId: string, terminalName: string) => void
 	onCommand: (terminalId: string, terminalName: string, command: string) => void
-	onOutput: (terminalId: string, terminalName: string, output: string) => void
 }
 
 let onTerminalFocusCallback: ((terminalId: string, terminalName: string) => void) | null = null
 let onTerminalCommandCallback: ((terminalId: string, terminalName: string, command: string) => void) | null = null
-let onTerminalOutputCallback: ((terminalId: string, terminalName: string, output: string) => void) | null = null
 
 /**
  * Get or create a unique ID for a terminal
@@ -138,7 +136,6 @@ export function initializeTerminalCapture(
 ): void {
 	onTerminalFocusCallback = callbacks.onFocus
 	onTerminalCommandCallback = callbacks.onCommand
-	onTerminalOutputCallback = callbacks.onOutput
 	onViewportObservationCallback = onViewportObservation ?? null
 
 	if (terminalExecutionDisposable) {
@@ -187,14 +184,10 @@ export function initializeTerminalCapture(
 
 		outputChanging = true
 
-		// Read and capture output
+		// Read and append output to terminal viewport
 		const stream = event.execution.read()
 		for await (const data of stream) {
 			appendTerminalContent(id, data)
-
-			if (onTerminalOutputCallback) {
-				onTerminalOutputCallback(id, name, data)
-			}
 		}
 
 		outputChanging = false

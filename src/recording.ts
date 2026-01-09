@@ -31,7 +31,6 @@ import type {
 	TabSwitchAction,
 	TerminalFocusAction,
 	TerminalCommandAction,
-	TerminalOutputAction,
 	FileChangeAction,
 } from './types'
 import { extContext, statusBarItem, actionsProvider } from './extension'
@@ -350,21 +349,6 @@ function handleTerminalCommand(terminalId: string, terminalName: string, command
 	logActionAndObservation(action)
 }
 
-function handleTerminalOutput(terminalId: string, terminalName: string, output: string): void {
-	if (!recording.isRecording) {return}
-	if (isCurrentFileExported()) {return}
-
-	const action: TerminalOutputAction = {
-		kind: 'terminal_output',
-		source: 'user',
-		terminalId,
-		terminalName,
-		output,
-	}
-
-	// Don't capture observation for every output chunk - just log the action
-	logAction(action)
-}
 
 export function handleFileChange(
 	file: string,
@@ -505,7 +489,6 @@ export async function startRecording(): Promise<void> {
 	initializeTerminalCapture(extContext, {
 		onFocus: handleTerminalFocus,
 		onCommand: handleTerminalCommand,
-		onOutput: handleTerminalOutput,
 	})
 	await initializeFilesystemWatcher(extContext, handleFileChange)
 

@@ -79,14 +79,6 @@ export interface TerminalCommandAction {
 	command: string
 }
 
-export interface TerminalOutputAction {
-	kind: 'terminal_output'
-	source: ActionSource
-	terminalId: string
-	terminalName: string
-	output: string
-}
-
 export interface FileChangeAction {
 	kind: 'file_change'
 	source: ActionSource
@@ -101,7 +93,6 @@ export type Action =
 	| TabSwitchAction
 	| TerminalFocusAction
 	| TerminalCommandAction
-	| TerminalOutputAction
 	| FileChangeAction
 
 export interface ObservationEvent {
