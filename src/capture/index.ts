@@ -9,7 +9,8 @@ export {
 	captureObservation,
 	initializeViewportCapture,
 	cleanupViewportCapture,
-	resetObservationState
+	resetObservationState,
+	resetViewportChanged
 } from './viewportCapture'
 
 // Terminal capture

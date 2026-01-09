@@ -129,3 +129,10 @@ export function cleanupViewportCapture(): void {
 export function resetObservationState(): void {
 	viewportChanged = false
 }
+
+/**
+ * Reset the viewport changed flag
+ */
+export function resetViewportChanged(): void {
+	viewportChanged = false
+}

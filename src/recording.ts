@@ -37,6 +37,7 @@ import { extContext, statusBarItem, actionsProvider } from './extension'
 import {
 	captureObservation,
 	resetObservationState,
+	resetViewportChanged,
 	resetTerminalState,
 	initializeViewportCapture,
 	initializeTerminalCapture,
@@ -113,11 +114,14 @@ function logAction(action: Action): void {
 }
 
 /**
- * Log an observation followed by an action (the standard pattern for user actions)
+ * Log an action followed by an observation (the standard pattern for user actions)
+ * The observation captures the state AFTER the action was taken.
+ * To reconstruct: Observation(N-1) + Action(N) → Observation(N)
  */
-function logObservationAndAction(action: Action): void {
-	logObservation(captureObservation())
+function logActionAndObservation(action: Action): void {
 	logAction(action)
+	logObservation(captureObservation())
+	resetViewportChanged()
 }
 
 export function isCurrentFileExported(): boolean {
@@ -218,7 +222,7 @@ function handleTextDocumentChange(event: vscode.TextDocumentChangeEvent): void {
 			},
 		}
 
-		logObservationAndAction(action)
+		logActionAndObservation(action)
 
 		// Add to pending edits buffer for correlation with FS_CHANGE
 		const pendingEdit: PendingEdit = {
@@ -263,7 +267,7 @@ function handleSelectionChange(event: vscode.TextEditorSelectionChangeEvent): vo
 		selectedText,
 	}
 
-	logObservationAndAction(action)
+	logActionAndObservation(action)
 	actionsProvider.setCurrentFile(editor.document.fileName)
 }
 
@@ -283,7 +287,7 @@ function handleActiveEditorChange(editor: vscode.TextEditor | undefined): void {
 		previousFile,
 	}
 
-	logObservationAndAction(action)
+	logActionAndObservation(action)
 	
 	previousFile = file
 	actionsProvider.setCurrentFile(editor.document.fileName)
@@ -300,7 +304,7 @@ function handleTerminalFocus(terminalId: string, terminalName: string): void {
 		terminalName,
 	}
 
-	logObservationAndAction(action)
+	logActionAndObservation(action)
 	actionsProvider.setCurrentFile(`Terminal: ${terminalName}`)
 }
 
@@ -316,7 +320,7 @@ function handleTerminalCommand(terminalId: string, terminalName: string, command
 		command,
 	}
 
-	logObservationAndAction(action)
+	logActionAndObservation(action)
 }
 
 function handleTerminalOutput(terminalId: string, terminalName: string, output: string): void {
@@ -372,7 +376,7 @@ export function handleFileChange(
 			changeType,
 			diff: computeFullDiff(),
 		}
-		logObservationAndAction(action)
+		logActionAndObservation(action)
 		return
 	}
 
@@ -389,7 +393,7 @@ export function handleFileChange(
 			changeType,
 			diff: computeFullDiff(),
 		}
-		logObservationAndAction(action)
+		logActionAndObservation(action)
 		return
 	}
 
@@ -405,7 +409,7 @@ export function handleFileChange(
 			changeType,
 			diff: agentDiff,
 		}
-		logObservationAndAction(action)
+		logActionAndObservation(action)
 	}
 }
 
