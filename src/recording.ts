@@ -395,11 +395,13 @@ export function handleFileChange(
 	const pending = pendingUserEdits.get(relativePath)
 	pendingUserEdits.delete(relativePath)
 
-	// If no pending edits or missing content, record full diff as agent
+	// If no pending edits or missing content, record full diff
+	// Use 'unknown' for create/delete, 'agent' for modifications (unlikely to be from user)
 	if (!pending || pending.length === 0 || !oldContent || !newContent) {
+		const source = (changeType === 'create' || changeType === 'delete') ? 'unknown' : 'agent'
 		const action: FileChangeAction = {
 			kind: 'file_change',
-			source: 'agent',
+			source,
 			file: relativePath,
 			changeType,
 			diff: computeFullDiff(),
