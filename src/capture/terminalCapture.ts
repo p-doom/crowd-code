@@ -77,7 +77,7 @@ export function getActiveTerminalViewport(): TerminalViewport | null {
 	}
 
 	const name = terminalNames.get(activeTerminalId)
-	if (!name) {
+	if (name === undefined) {
 		return null
 	}
 
