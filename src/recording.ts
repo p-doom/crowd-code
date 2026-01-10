@@ -6,6 +6,8 @@
 
 import * as fs from 'node:fs'
 import * as path from 'node:path'
+import { gzip } from 'node:zlib'
+import { promisify } from 'node:util'
 import * as vscode from 'vscode'
 import axios from 'axios'
 import { createTwoFilesPatch } from 'diff'
@@ -94,6 +96,9 @@ let pendingEditFile: string | null = null
 // Reset on any user action
 let agentBatchActive = false
 
+const gzipAsync = promisify(gzip)
+let snapshotCounter = 0
+
 // Disposables for event subscriptions
 const subscriptions: vscode.Disposable[] = []
 
@@ -136,22 +141,60 @@ function logActionAndObservation(action: Action): void {
 }
 
 /**
+ * Write a compressed snapshot to disk
+ * Returns the snapshot ID for reference in events
+ */
+async function writeCompressedSnapshot(
+	baseFolder: string,
+	snapshot: Record<string, string>
+): Promise<string> {
+	snapshotCounter++
+	const snapshotId = `snapshot_${String(snapshotCounter).padStart(3, '0')}`
+
+	const snapshotsDir = path.join(baseFolder, 'snapshots')
+	if (!fs.existsSync(snapshotsDir)) {
+		fs.mkdirSync(snapshotsDir, { recursive: true })
+	}
+
+	const json = JSON.stringify(snapshot)
+	const compressed = await gzipAsync(json, { level: 1 })
+	const filePath = path.join(snapshotsDir, `${snapshotId}.json.gz`)
+
+	await fs.promises.writeFile(filePath, compressed)
+	return snapshotId
+}
+
+/**
  * Log a workspace snapshot capturing the before-state of all files
  * Called on first agent edit in a batch to be able to reconstruct what the LLM saw
  */
-function logWorkspaceSnapshot(changedFile: string, oldContent: string): void {
-	if (!recording.isRecording) {return}
+async function logWorkspaceSnapshot(changedFile: string, oldContent: string): Promise<void> {
+	if (!recording.isRecording || !recording.startDateTime) {return}
 
 	const snapshot = getFileCacheSnapshot()
 	const beforeState: Record<string, string> = Object.fromEntries(snapshot)
 	beforeState[changedFile] = oldContent
+
+	const exportPath = getExportPath()
+	if (!exportPath) {return}
+
+	const baseFilePath = generateBaseFilePath(
+		recording.startDateTime,
+		false,
+		undefined,
+		recording.sessionId
+	)
+	if (!baseFilePath) {return}
+
+	const baseFolder = path.join(exportPath, path.dirname(baseFilePath))
+	const snapshotId = await writeCompressedSnapshot(baseFolder, beforeState)
 
 	recording.sequence++
 	const event: WorkspaceSnapshotEvent = {
 		sequence: recording.sequence,
 		timestamp: Date.now(),
 		type: 'workspace_snapshot',
-		snapshot: beforeState,
+		snapshotId,
 	}
 	recording.events.push(event)
 }
@@ -393,12 +436,12 @@ function handleTerminalCommand(terminalId: string, terminalName: string, command
 }
 
 
-export function handleFileChange(
+export async function handleFileChange(
 	file: string,
 	changeType: 'create' | 'change' | 'delete',
 	oldContent: string | null,
 	newContent: string | null
-): void {
+): Promise<void> {
 	if (!recording.isRecording) {return}
 
 	const relativePath = vscode.workspace.asRelativePath(file)
@@ -419,10 +462,10 @@ export function handleFileChange(
 		)
 	}
 
-	const maybeSnapshotAgentBatch = (): void => {
+	const maybeSnapshotAgentBatch = async (): Promise<void> => {
 		if (!agentBatchActive && oldContent !== null) {
 			agentBatchActive = true
-			logWorkspaceSnapshot(file, oldContent)
+			await logWorkspaceSnapshot(file, oldContent)
 		}
 	}
 
@@ -448,7 +491,7 @@ export function handleFileChange(
 	if (!pending || pending.length === 0 || oldContent === null || newContent === null) {
 		const source = (changeType === 'create' || changeType === 'delete') ? 'unknown' : 'agent'
 		if (source === 'agent') {
-			maybeSnapshotAgentBatch()
+			await maybeSnapshotAgentBatch()
 		}
 		const action: FileChangeAction = {
 			kind: 'file_change',
@@ -467,7 +510,7 @@ export function handleFileChange(
 
 	// Only record if there's remaining agent diff
 	if (agentDiff) {
-		maybeSnapshotAgentBatch()
+		await maybeSnapshotAgentBatch()
 		const action: FileChangeAction = {
 			kind: 'file_change',
 			source: 'agent',
@@ -541,6 +584,7 @@ export async function startRecording(): Promise<void> {
 	resetGitState()
 	pendingUserEdits.clear()
 	agentBatchActive = false
+	snapshotCounter = 0
 
 	// Create recording folder
 	const baseFilePath = generateBaseFilePath(recording.startDateTime, false, undefined, recording.sessionId)

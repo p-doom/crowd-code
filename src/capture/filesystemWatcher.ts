@@ -17,7 +17,7 @@ export type FileChangeCallback = (
 	changeType: 'create' | 'change' | 'delete',
 	oldContent: string | null,
 	newContent: string | null
-) => void
+) => void | Promise<void>
 
 let fileChangeCallback!: FileChangeCallback
 
