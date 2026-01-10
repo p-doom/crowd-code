@@ -155,13 +155,6 @@ export function initializeTerminalCapture(
 		terminalNames.set(id, name)
 		activeTerminalId = id
 
-		if (onViewportObservationCallback) {
-			const viewport = getActiveTerminalViewport()
-			if (viewport) {
-				onViewportObservationCallback(viewport)
-			}
-		}
-
 		if (onTerminalFocusCallback) {
 			onTerminalFocusCallback(id, name)
 		}
