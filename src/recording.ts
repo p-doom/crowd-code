@@ -380,7 +380,7 @@ export function handleFileChange(
 	// Check for git operation first
 	const gitOperation = getRecentGitOperation()
 	if (gitOperation) {
-		pendingUserEdits.clear() // Flush entire buffer, git can affect many files
+		pendingUserEdits.clear()
 		const action: FileChangeAction = {
 			kind: 'file_change',
 			source: gitOperation,
@@ -392,9 +392,7 @@ export function handleFileChange(
 		return
 	}
 
-	// Get and clear pending user edits for this file
 	const pending = pendingUserEdits.get(relativePath)
-	pendingUserEdits.delete(relativePath)
 
 	// If no pending edits or missing content, record full diff
 	// Use 'unknown' for create/delete, 'agent' for modifications (unlikely to be from user)
@@ -408,6 +406,7 @@ export function handleFileChange(
 			diff: computeFullDiff(),
 		}
 		logActionAndObservation(action)
+		pendingUserEdits.delete(relativePath)
 		return
 	}
 
@@ -425,6 +424,8 @@ export function handleFileChange(
 		}
 		logActionAndObservation(action)
 	}
+
+	pendingUserEdits.delete(relativePath)
 }
 
 function handleScrollObservation(observation: Observation): void {
