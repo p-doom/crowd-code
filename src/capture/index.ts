@@ -26,6 +26,7 @@ export type { TerminalCallbacks, TerminalViewport } from './terminalCapture'
 export {
 	initializeFilesystemWatcher,
 	cleanupFilesystemWatcher,
-	resetFilesystemState
+	resetFilesystemState,
+	getFileCacheSnapshot
 } from './filesystemWatcher'
 export type { FileChangeCallback } from './filesystemWatcher'

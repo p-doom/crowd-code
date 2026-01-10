@@ -219,3 +219,11 @@ export function resetFilesystemState(): void {
 	fileCache.clear()
 }
 
+/**
+ * Get a snapshot of the current file cache
+ * Returns a new Map to avoid external mutation of the cache
+ */
+export function getFileCacheSnapshot(): Map<string, string> {
+	return new Map(fileCache.entries())
+}
+

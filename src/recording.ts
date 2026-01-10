@@ -32,6 +32,7 @@ import type {
 	TerminalFocusAction,
 	TerminalCommandAction,
 	FileChangeAction,
+	WorkspaceSnapshotEvent,
 } from './types'
 import { extContext, statusBarItem, actionsProvider } from './extension'
 import {
@@ -43,6 +44,7 @@ import {
 	initializeTerminalCapture,
 	initializeFilesystemWatcher,
 	resetFilesystemState,
+	getFileCacheSnapshot,
 	TerminalViewport,
 } from './capture'
 import { getRecentGitOperation, resetGitState } from './gitProvider'
@@ -88,6 +90,10 @@ const pendingUserEdits = new Map<string, PendingEdit[]>()
 // This coordinates the two handlers: edit logs action, then selection captures observation
 let pendingEditFile: string | null = null
 
+// Agent batch tracking for workspace snapshots
+// Reset on any user action
+let agentBatchActive = false
+
 // Disposables for event subscriptions
 const subscriptions: vscode.Disposable[] = []
 
@@ -127,6 +133,27 @@ function logActionAndObservation(action: Action): void {
 	logAction(action)
 	logObservation(captureObservation())
 	resetViewportChanged()
+}
+
+/**
+ * Log a workspace snapshot capturing the before-state of all files
+ * Called on first agent edit in a batch to be able to reconstruct what the LLM saw
+ */
+function logWorkspaceSnapshot(changedFile: string, oldContent: string): void {
+	if (!recording.isRecording) {return}
+
+	const snapshot = getFileCacheSnapshot()
+	const beforeState: Record<string, string> = Object.fromEntries(snapshot)
+	beforeState[changedFile] = oldContent
+
+	recording.sequence++
+	const event: WorkspaceSnapshotEvent = {
+		sequence: recording.sequence,
+		timestamp: Date.now(),
+		type: 'workspace_snapshot',
+		snapshot: beforeState,
+	}
+	recording.events.push(event)
 }
 
 export function isCurrentFileExported(): boolean {
@@ -203,6 +230,9 @@ function handleTextDocumentChange(event: vscode.TextDocumentChangeEvent): void {
 	// Must be active document to be a user edit
 	if (!editor || event.document !== editor.document) {return}
 
+	// User activity resets agent batch
+	agentBatchActive = false
+
 	const visibleRanges = editor.visibleRanges
 	const file = vscode.workspace.asRelativePath(event.document.fileName)
 
@@ -262,6 +292,9 @@ function handleSelectionChange(event: vscode.TextEditorSelectionChangeEvent): vo
 	const selection = event.selections[0]
 	if (!selection) {return}
 
+	// User activity resets agent batch
+	agentBatchActive = false
+
 	const file = vscode.workspace.asRelativePath(editor.document.fileName)
 
 	// Check if this selection change is completing a pending edit action
@@ -305,6 +338,9 @@ function handleActiveEditorChange(editor: vscode.TextEditor | undefined): void {
 	if (!editor) {return}
 	if (isCurrentFileExported()) {return}
 
+	// User activity resets agent batch
+	agentBatchActive = false
+
 	const file = vscode.workspace.asRelativePath(editor.document.fileName)
 
 	const action: TabSwitchAction = {
@@ -324,6 +360,9 @@ function handleTerminalFocus(terminalId: string, terminalName: string): void {
 	if (!recording.isRecording) {return}
 	if (isCurrentFileExported()) {return}
 
+	// User activity resets agent batch
+	agentBatchActive = false
+
 	const action: TerminalFocusAction = {
 		kind: 'terminal_focus',
 		source: 'user',
@@ -338,6 +377,9 @@ function handleTerminalFocus(terminalId: string, terminalName: string): void {
 function handleTerminalCommand(terminalId: string, terminalName: string, command: string): void {
 	if (!recording.isRecording) {return}
 	if (isCurrentFileExported()) {return}
+
+	// User activity resets agent batch
+	agentBatchActive = false
 
 	const action: TerminalCommandAction = {
 		kind: 'terminal_command',
@@ -377,6 +419,13 @@ export function handleFileChange(
 		)
 	}
 
+	const maybeSnapshotAgentBatch = (): void => {
+		if (!agentBatchActive && oldContent !== null) {
+			agentBatchActive = true
+			logWorkspaceSnapshot(file, oldContent)
+		}
+	}
+
 	// Check for git operation first
 	const gitOperation = getRecentGitOperation()
 	if (gitOperation) {
@@ -398,6 +447,9 @@ export function handleFileChange(
 	// Use 'unknown' for create/delete, 'agent' for modifications (unlikely to be from user)
 	if (!pending || pending.length === 0 || oldContent === null || newContent === null) {
 		const source = (changeType === 'create' || changeType === 'delete') ? 'unknown' : 'agent'
+		if (source === 'agent') {
+			maybeSnapshotAgentBatch()
+		}
 		const action: FileChangeAction = {
 			kind: 'file_change',
 			source,
@@ -415,6 +467,7 @@ export function handleFileChange(
 
 	// Only record if there's remaining agent diff
 	if (agentDiff) {
+		maybeSnapshotAgentBatch()
 		const action: FileChangeAction = {
 			kind: 'file_change',
 			source: 'agent',
@@ -487,6 +540,7 @@ export async function startRecording(): Promise<void> {
 	resetFilesystemState()
 	resetGitState()
 	pendingUserEdits.clear()
+	agentBatchActive = false
 
 	// Create recording folder
 	const baseFilePath = generateBaseFilePath(recording.startDateTime, false, undefined, recording.sessionId)
@@ -569,6 +623,7 @@ export async function stopRecording(force = false): Promise<void> {
         clearTimeout(panicButtonTimeoutId)
         panicButtonTimeoutId = undefined
     }
+	agentBatchActive = false
 
 	// Dispose subscriptions
 	for (const subscription of subscriptions) {

@@ -109,7 +109,14 @@ export interface ActionEvent {
 	action: Action
 }
 
-export type RecordingEvent = ObservationEvent | ActionEvent
+export interface WorkspaceSnapshotEvent {
+	sequence: number
+	timestamp: number
+	type: 'workspace_snapshot'
+	snapshot: Record<string, string>  // filePath -> content
+}
+
+export type RecordingEvent = ObservationEvent | ActionEvent | WorkspaceSnapshotEvent
 
 export interface RecordingSession {
 	version: '2.0'
