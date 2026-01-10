@@ -396,7 +396,7 @@ export function handleFileChange(
 
 	// If no pending edits or missing content, record full diff
 	// Use 'unknown' for create/delete, 'agent' for modifications (unlikely to be from user)
-	if (!pending || pending.length === 0 || !oldContent || !newContent) {
+	if (!pending || pending.length === 0 || oldContent === null || newContent === null) {
 		const source = (changeType === 'create' || changeType === 'delete') ? 'unknown' : 'agent'
 		const action: FileChangeAction = {
 			kind: 'file_change',
