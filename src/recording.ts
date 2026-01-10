@@ -43,6 +43,7 @@ import {
 	initializeTerminalCapture,
 	initializeFilesystemWatcher,
 	resetFilesystemState,
+	TerminalViewport,
 } from './capture'
 import { getRecentGitOperation, resetGitState } from './gitProvider'
 
@@ -435,6 +436,13 @@ function handleScrollObservation(observation: Observation): void {
 	logObservation(observation)
 }
 
+function handleTerminalViewportChange(_viewport: TerminalViewport): void {
+	if (!recording.isRecording) {return}
+
+	logObservation(captureObservation())
+	resetViewportChanged()
+}
+
 function createRecordingFolder(folderPath: string): void {
     if (!fs.existsSync(folderPath)) {
         fs.mkdirSync(folderPath, { recursive: true })
@@ -492,7 +500,7 @@ export async function startRecording(): Promise<void> {
 	initializeTerminalCapture(extContext, {
 		onFocus: handleTerminalFocus,
 		onCommand: handleTerminalCommand,
-	})
+	}, handleTerminalViewportChange)
 	await initializeFilesystemWatcher(extContext, handleFileChange)
 
 	// Subscribe to VS Code events

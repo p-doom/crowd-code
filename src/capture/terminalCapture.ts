@@ -102,7 +102,9 @@ function appendTerminalContent(terminalId: string, content: string): void {
 		terminalContent.set(terminalId, combined)
 	}
 	
-	terminalViewportChanged = true
+	if (terminalId === activeTerminalId) {
+		terminalViewportChanged = true
+	}
 }
 
 /**
