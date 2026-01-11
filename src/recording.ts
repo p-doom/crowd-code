@@ -1,7 +1,6 @@
 /**
  * Recording Orchestrator for crowd-code 2.0
  * Integrates viewport, terminal, filesystem, and deduplication modules
- * Implements the observation-action paradigm
  */
 
 import * as fs from 'node:fs'
@@ -165,6 +164,14 @@ async function writeCompressedSnapshot(
 }
 
 /**
+ * Heuristic to check if content is text
+ * Binary files contain null bytes, text files don't
+ */
+function isTextContent(content: string): boolean {
+	return !content.includes('\0')
+}
+
+/**
  * Log a workspace snapshot capturing the before-state of all files
  * Called on first agent edit in a batch to be able to reconstruct what the LLM saw
  */
@@ -172,7 +179,14 @@ async function logWorkspaceSnapshot(changedFile: string, oldContent: string): Pr
 	if (!recording.isRecording || !recording.startDateTime) {return}
 
 	const snapshot = getFileCacheSnapshot()
-	const beforeState: Record<string, string> = Object.fromEntries(snapshot)
+	const beforeState: Record<string, string> = {}
+
+	for (const [filePath, content] of snapshot) {
+		if (isTextContent(content)) {
+			beforeState[filePath] = content
+		}
+	}
+
 	beforeState[changedFile] = oldContent
 
 	const exportPath = getExportPath()

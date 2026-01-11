@@ -11,6 +11,7 @@ import { LRUCache } from 'lru-cache'
 
 // Configuration
 const MAX_CACHE_SIZE = 5000
+const MAX_FILE_SIZE_BYTES = 100 * 1024 // 100KB
 
 export type FileChangeCallback = (
 	file: string,
@@ -73,15 +74,27 @@ function loadGitignore(): void {
  * Check if a file should be tracked (respects VS Code's files.exclude)
  */
 async function shouldTrackFile(filePath: string): Promise<boolean> {
-	if (fileCache.has(filePath)) return true
-	if (isExcluded(filePath)) return false
-	if (!workspaceRoot || !workspaceFolder) return false
+	if (fileCache.has(filePath)) {return true}
+	if (isExcluded(filePath)) {return false}
+	if (!workspaceRoot || !workspaceFolder) {return false}
 	
 	const relativePath = path.relative(workspaceRoot, filePath).replace(/\\/g, '/')
 	const matches = await vscode.workspace.findFiles(
 		new vscode.RelativePattern(workspaceFolder, relativePath)
 	)
 	return matches.length > 0
+}
+
+/**
+ * Check if file size is within limit
+ */
+async function isFileSizeWithinLimit(filePath: string): Promise<boolean> {
+	try {
+		const stats = await fs.promises.stat(filePath)
+		return stats.size <= MAX_FILE_SIZE_BYTES
+	} catch {
+		return false
+	}
 }
 
 /**
@@ -116,6 +129,16 @@ async function processFileChange(
 		const oldContent = fileCache.get(filePath) ?? null
 		fileCache.delete(filePath)
 		fileChangeCallback(filePath, changeType, oldContent, null)
+		return
+	}
+
+	// Skip files that exceed size limit
+	const withinLimit = await isFileSizeWithinLimit(filePath)
+	if (!withinLimit) {
+		// Remove from cache if it was previously tracked but now exceeds limit
+		if (fileCache.has(filePath)) {
+			fileCache.delete(filePath)
+		}
 		return
 	}
 
@@ -154,12 +177,16 @@ async function initializeCacheBackground(): Promise<void> {
 	const files = await vscode.workspace.findFiles('**/*')
 	
 	for (const file of files) {
-		if (isExcluded(file.fsPath)) continue
+		if (isExcluded(file.fsPath)) {continue}
 		
 		// Yield to event loop between files to avoid blocking
 		await new Promise(resolve => setImmediate(resolve))
 		
 		try {
+			// Skip files that exceed size limit
+			const withinLimit = await isFileSizeWithinLimit(file.fsPath)
+			if (!withinLimit) {continue}
+
 			const content = await vscode.workspace.fs.readFile(file)
 			fileCache.set(file.fsPath, content.toString())
 		} catch {
