@@ -125,6 +125,14 @@ export interface RecordingSession {
 	events: RecordingEvent[]
 }
 
+export interface RecordingChunk {
+	version: '2.0'
+	sessionId: string
+	startTime: number
+	chunkIndex: number
+	events: RecordingEvent[]
+}
+
 export interface RecordingState {
 	isRecording: boolean
 	startDateTime: Date | null
