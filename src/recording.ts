@@ -70,6 +70,8 @@ export const commands = {
 
 let intervalId: NodeJS.Timeout | null = null
 let uploadIntervalId: NodeJS.Timeout | null = null
+let saveIntervalId: NodeJS.Timeout | null = null
+let saveInFlight: Promise<void> | null = null
 let timer = 0
 let previousFile: string | null = null
 let panicStatusBarItem: vscode.StatusBarItem | undefined
@@ -79,6 +81,7 @@ let panicButtonTimeoutId: NodeJS.Timeout | undefined
 const CROWD_CODE_API_GATEWAY_URL = process.env.CROWD_CODE_API_GATEWAY_URL
 const PANIC_BUTTON_TIMEOUT = 3000
 const MAX_BUFFER_SIZE_PER_FILE = 1000 // Prevent unbounded growth
+const PERIODIC_SAVE_INTERVAL_MS = 5 * 60 * 1000 // 5 minutes
 
 interface PendingEdit {
 	rangeOffset: number
@@ -644,6 +647,14 @@ export async function startRecording(): Promise<void> {
 		await uploadRecording()
 	}, 5 * 60 * 1000) // 5 minutes
 
+	// Periodic local save
+	saveIntervalId = setInterval(() => {
+		if (saveInFlight) {return}
+		saveInFlight = saveRecording(true).finally(() => {
+			saveInFlight = null
+		})
+	}, PERIODIC_SAVE_INTERVAL_MS)
+
     notificationWithProgress('Recording started')
 	logToOutput('Recording started (v2.0)', 'info')
 
@@ -677,6 +688,10 @@ export async function stopRecording(force = false): Promise<void> {
 		clearInterval(uploadIntervalId)
 		uploadIntervalId = null
 	}
+	if (saveIntervalId) {
+		clearInterval(saveIntervalId)
+		saveIntervalId = null
+	}
     if (panicButtonTimeoutId) {
         clearTimeout(panicButtonTimeoutId)
         panicButtonTimeoutId = undefined
@@ -696,7 +711,7 @@ export async function stopRecording(force = false): Promise<void> {
     updatePanicButton()
     actionsProvider.setRecordingState(false)
 
-    if (force) {
+	if (force) {
         notificationWithProgress('Recording cancelled')
         logToOutput('Recording cancelled', 'info')
 		recording.events = []
@@ -704,6 +719,9 @@ export async function stopRecording(force = false): Promise<void> {
     }
 
 	// Save recording
+	if (saveInFlight) {
+		await saveInFlight
+	}
 	await saveRecording()
 
     notificationWithProgress('Recording finished')
@@ -711,16 +729,28 @@ export async function stopRecording(force = false): Promise<void> {
 }
 
 
-async function saveRecording(): Promise<void> {
+async function saveRecording(log = true): Promise<void> {
 	const exportPath = getExportPath()
-	if (!exportPath || !recording.startDateTime) {
-        return
-    }
+	if (!exportPath) {
+		if (log) {
+			logToOutput('Cannot save recording: no export path configured', 'error')
+		}
+		return
+	}
+	if (!recording.startDateTime) {
+		if (log) {
+			logToOutput('Cannot save recording: no start time', 'error')
+		}
+		return
+	}
 
 	const baseFilePath = generateBaseFilePath(recording.startDateTime, false, undefined, recording.sessionId)
 	if (!baseFilePath) {
-        return
-    }
+		if (log) {
+			logToOutput('Cannot save recording: failed to generate file path', 'error')
+		}
+		return
+	}
 
 	const session: RecordingSession = {
 		version: '2.0',
@@ -738,7 +768,9 @@ async function saveRecording(): Promise<void> {
                 fs.mkdirSync(directory, { recursive: true })
             }
 		await fs.promises.writeFile(filePath, jsonContent)
-		logToOutput(`Recording saved to ${filePath}`, 'info')
+		if (log) {
+			logToOutput(`Recording saved to ${filePath}`, 'info')
+		}
         } catch (err) {
 		logToOutput(`Failed to save recording: ${err}`, 'error')
 }
