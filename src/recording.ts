@@ -10,6 +10,7 @@ import { promisify } from 'node:util'
 import * as vscode from 'vscode'
 import axios from 'axios'
 import { createTwoFilesPatch } from 'diff'
+import * as tar from 'tar'
 import { hasConsent } from './consent'
 import {
     notificationWithProgress,
@@ -69,20 +70,24 @@ export const commands = {
 
 
 let intervalId: NodeJS.Timeout | null = null
-let saveIntervalId: NodeJS.Timeout | null = null
-let saveInFlight: Promise<void> | null = null
+let diskSaveIntervalId: NodeJS.Timeout | null = null
+let uploadIntervalId: NodeJS.Timeout | null = null
+let uploadInProgress = false
 let timer = 0
 let previousFile: string | null = null
 let panicStatusBarItem: vscode.StatusBarItem | undefined
 let panicButtonPressCount = 0
 let panicButtonTimeoutId: NodeJS.Timeout | undefined
+
+let sessionFolder: string | null = null
 let chunkIndex = 0
+let partIndex = 1
 
 const CROWD_CODE_API_GATEWAY_URL = process.env.CROWD_CODE_API_GATEWAY_URL
 const PANIC_BUTTON_TIMEOUT = 3000
 const MAX_BUFFER_SIZE_PER_FILE = 1000 // Prevent unbounded growth
-const PERIODIC_SAVE_INTERVAL_MS = 5 * 60 * 1000 // 5 minutes
-const SNAPSHOT_PART_SIZE_BYTES = 5 * 1024 * 1024 // 5MB gateway-safe part size
+const DISK_SAVE_INTERVAL_MS = 5 * 60 * 1000 // Append to disk every 5 minutes
+const UPLOAD_INTERVAL_MS = 30 * 60 * 1000 // Upload tar.gz every 30 minutes
 
 interface PendingEdit {
 	rangeOffset: number
@@ -144,48 +149,135 @@ function logActionAndObservation(action: Action): void {
 }
 
 /**
- * Write a compressed snapshot to disk and upload parts
+ * Save events to disk as a JSON chunk file
+ * Events are evicted from memory after saving
+ */
+async function saveChunkToDisk(): Promise<void> {
+	if (recording.events.length === 0) { return }
+	if (!sessionFolder || !recording.startDateTime) { return }
+
+	const chunk: RecordingChunk = {
+		version: '2.0',
+		sessionId: recording.sessionId,
+		startTime: recording.startDateTime.getTime(),
+		chunkIndex,
+		events: recording.events,
+	}
+
+	const chunkFileName = `chunk_${String(chunkIndex).padStart(3, '0')}.json`
+	const filePath = path.join(sessionFolder, chunkFileName)
+	await fs.promises.writeFile(filePath, JSON.stringify(chunk))
+
+	logToOutput(`Chunk ${chunkIndex} saved (${recording.events.length} events)`, 'info')
+
+	recording.events = []
+	chunkIndex++
+}
+
+/**
+ * Create tar.gz from session files and upload to S3
+ * Uses index-based tracking to safely handle concurrent writes
+ * Cleans up local files after successful upload
+ */
+async function createTarGzAndUpload(): Promise<void> {
+	if (uploadInProgress) { return }
+	if (!sessionFolder || !recording.startDateTime) { return }
+
+	uploadInProgress = true
+
+	try {
+		// Snapshot the ranges to upload (prevents race condition)
+		const lastChunkToInclude = chunkIndex - 1
+		const lastSnapshotToInclude = snapshotCounter - 1
+		const snapshotsDir = path.join(sessionFolder, 'snapshots')
+
+		if (lastChunkToInclude < 0 && lastSnapshotToInclude < 0) {
+			return
+		}
+
+		const filesToTar: string[] = []
+		const chunkFilesToDelete: string[] = []
+
+		for (let i = 0; i <= lastChunkToInclude; i++) {
+			const chunkFileName = `chunk_${String(i).padStart(3, '0')}.json`
+			const chunkPath = path.join(sessionFolder, chunkFileName)
+			if (fs.existsSync(chunkPath)) {
+				filesToTar.push(chunkFileName)
+				chunkFilesToDelete.push(chunkPath)
+			}
+		}
+
+		const snapshotFilesToDelete: string[] = []
+
+		for (let i = 0; i <= lastSnapshotToInclude; i++) {
+			const snapshotFileName = `snapshot_${String(i + 1).padStart(3, '0')}.json`
+			const snapshotPath = path.join(snapshotsDir, snapshotFileName)
+			if (fs.existsSync(snapshotPath)) {
+				filesToTar.push(path.join('snapshots', snapshotFileName))
+				snapshotFilesToDelete.push(snapshotPath)
+			}
+		}
+
+		if (filesToTar.length === 0) {
+			return
+		}
+
+		const baseFilePath = generateBaseFilePath(recording.startDateTime, false, undefined, recording.sessionId)
+		if (!baseFilePath) { return }
+
+		const exportPath = getExportPath()
+		if (!exportPath) { return }
+
+		const folderPath = path.dirname(path.join(exportPath, baseFilePath))
+		const tarFileName = `${baseFilePath}_part_${String(partIndex).padStart(3, '0')}.tar.gz`
+		const tarPath = path.join(folderPath, tarFileName)
+
+		await tar.create(
+			{ gzip: true, file: tarPath, cwd: sessionFolder },
+			filesToTar
+		)
+
+		const relativePath = path.relative(exportPath, tarPath)
+		await uploadGzipFile(tarPath, relativePath)
+
+		for (const chunkPath of chunkFilesToDelete) {
+			await fs.promises.unlink(chunkPath)
+		}
+		for (const snapshotPath of snapshotFilesToDelete) {
+			await fs.promises.unlink(snapshotPath)
+		}
+		await fs.promises.unlink(tarPath)
+
+		logToOutput(`Uploaded part ${partIndex} (${filesToTar.length} files)`, 'info')
+
+		partIndex++
+
+	} finally {
+		uploadInProgress = false
+	}
+}
+
+/**
+ * Write a snapshot to disk
  * Returns the snapshot ID for reference in events
  */
-async function writeCompressedSnapshot(
-	baseFolder: string,
-	snapshot: Record<string, string>
-): Promise<string> {
+async function writeSnapshot(snapshot: Record<string, string>): Promise<string> {
+	if (!sessionFolder) {
+		throw new Error('Session folder not initialized')
+	}
+
 	snapshotCounter++
 	const snapshotId = `snapshot_${String(snapshotCounter).padStart(3, '0')}`
 
-	const snapshotsDir = path.join(baseFolder, 'snapshots')
+	const snapshotsDir = path.join(sessionFolder, 'snapshots')
 	if (!fs.existsSync(snapshotsDir)) {
-		fs.mkdirSync(snapshotsDir, { recursive: true })
+		await fs.promises.mkdir(snapshotsDir, { recursive: true })
 	}
 
-	const json = JSON.stringify(snapshot)
-	const compressed = await gzipAsync(json, { level: 6 })
-	const filePath = path.join(snapshotsDir, `${snapshotId}.json.gz`)
+	const filePath = path.join(snapshotsDir, `${snapshotId}.json`)
+	await fs.promises.writeFile(filePath, JSON.stringify(snapshot))
 
-	const exportPath = getExportPath()
-	await writeAndUploadSnapshotParts(filePath, compressed, exportPath)
 	return snapshotId
-}
-
-async function writeAndUploadSnapshotParts(
-	filePath: string,
-	compressed: Buffer,
-	exportPath: string | undefined
-): Promise<void> {
-	let partIndex = 1
-	for (let offset = 0; offset < compressed.length; offset += SNAPSHOT_PART_SIZE_BYTES) {
-		const chunk = compressed.subarray(offset, offset + SNAPSHOT_PART_SIZE_BYTES)
-		const partPath = `${filePath}.part${String(partIndex).padStart(3, '0')}`
-		await fs.promises.writeFile(partPath, chunk)
-
-		// Upload part immediately after writing
-		if (exportPath) {
-			const relativePath = path.relative(exportPath, partPath)
-			await uploadGzipFile(partPath, relativePath)
-		}
-		partIndex++
-	}
 }
 
 /**
@@ -202,6 +294,7 @@ function isTextContent(content: string): boolean {
  */
 async function logWorkspaceSnapshot(changedFile: string, oldContent: string): Promise<void> {
 	if (!recording.isRecording || !recording.startDateTime) {return}
+	if (!sessionFolder) {return}
 
 	const snapshot = getFileCacheSnapshot()
 	const beforeState: Record<string, string> = {}
@@ -214,19 +307,7 @@ async function logWorkspaceSnapshot(changedFile: string, oldContent: string): Pr
 
 	beforeState[changedFile] = oldContent
 
-	const exportPath = getExportPath()
-	if (!exportPath) {return}
-
-	const baseFilePath = generateBaseFilePath(
-		recording.startDateTime,
-		false,
-		undefined,
-		recording.sessionId
-	)
-	if (!baseFilePath) {return}
-
-	const baseFolder = path.join(exportPath, path.dirname(baseFilePath))
-	const snapshotId = await writeCompressedSnapshot(baseFolder, beforeState)
+	const snapshotId = await writeSnapshot(beforeState)
 
 	recording.sequence++
 	const event: WorkspaceSnapshotEvent = {
@@ -624,7 +705,8 @@ export async function startRecording(): Promise<void> {
 	pendingUserEdits.clear()
 	agentBatchActive = false
 	snapshotCounter = 0
-	chunkIndex = 0
+	partIndex = 1
+	uploadInProgress = false
 
 	// Create recording folder
 	const baseFilePath = generateBaseFilePath(recording.startDateTime, false, undefined, recording.sessionId)
@@ -633,6 +715,9 @@ export async function startRecording(): Promise<void> {
     }
     const folderPath = path.dirname(path.join(exportPath, baseFilePath))
     createRecordingFolder(folderPath)
+
+	sessionFolder = path.join(folderPath, 'temp')
+	await fs.promises.mkdir(sessionFolder, { recursive: true })
 
 	// Initialize capture modules with callbacks
 	initializeViewportCapture(extContext, handleScrollObservation)
@@ -665,13 +750,14 @@ export async function startRecording(): Promise<void> {
 	const initialObservation = captureObservation()
 	logObservation(initialObservation)
 
-	// Periodic save and upload
-	saveIntervalId = setInterval(() => {
-		if (saveInFlight) {return}
-		saveInFlight = saveAndUploadChunk(true).finally(() => {
-			saveInFlight = null
-		})
-	}, PERIODIC_SAVE_INTERVAL_MS)
+	diskSaveIntervalId = setInterval(async () => {
+		await saveChunkToDisk()
+	}, DISK_SAVE_INTERVAL_MS)
+
+	uploadIntervalId = setInterval(async () => {
+		await saveChunkToDisk()
+		await createTarGzAndUpload()
+	}, UPLOAD_INTERVAL_MS)
 
     notificationWithProgress('Recording started')
 	logToOutput('Recording started (v2.0)', 'info')
@@ -702,9 +788,13 @@ export async function stopRecording(force = false): Promise<void> {
 		clearInterval(intervalId)
 		intervalId = null
 	}
-	if (saveIntervalId) {
-		clearInterval(saveIntervalId)
-		saveIntervalId = null
+	if (diskSaveIntervalId) {
+		clearInterval(diskSaveIntervalId)
+		diskSaveIntervalId = null
+	}
+	if (uploadIntervalId) {
+		clearInterval(uploadIntervalId)
+		uploadIntervalId = null
 	}
     if (panicButtonTimeoutId) {
         clearTimeout(panicButtonTimeoutId)
@@ -725,97 +815,27 @@ export async function stopRecording(force = false): Promise<void> {
     updatePanicButton()
     actionsProvider.setRecordingState(false)
 
+	await saveChunkToDisk()
+	await createTarGzAndUpload()
+
+	if (sessionFolder && fs.existsSync(sessionFolder)) {
+		await fs.promises.rm(sessionFolder, { recursive: true, force: true })
+	}
+	sessionFolder = null
+
 	if (force) {
         notificationWithProgress('Recording cancelled')
         logToOutput('Recording cancelled', 'info')
 		recording.events = []
-        return
-    }
-
-	// Save and upload final chunk
-	if (saveInFlight) {
-		await saveInFlight
+	} else {
+		notificationWithProgress('Recording finished')
+		logToOutput('Recording finished (v2.0)', 'info')
 	}
-	await saveAndUploadChunk()
-
-    notificationWithProgress('Recording finished')
-	logToOutput('Recording finished (v2.0)', 'info')
 }
 
 
 /**
- * Save current events as a compressed chunk file.
- * Returns the file path of the saved chunk, or null if nothing was saved.
- */
-async function saveChunk(log = true): Promise<string | null> {
-	// Skip if no events to save
-	if (recording.events.length === 0) {
-		return null
-	}
-
-	const exportPath = getExportPath()
-	if (!exportPath) {
-		if (log) {
-			logToOutput('Cannot save chunk: no export path configured', 'error')
-		}
-		return null
-	}
-	if (!recording.startDateTime) {
-		if (log) {
-			logToOutput('Cannot save chunk: no start time', 'error')
-		}
-		return null
-	}
-
-	const baseFilePath = generateBaseFilePath(recording.startDateTime, false, undefined, recording.sessionId)
-	if (!baseFilePath) {
-		if (log) {
-			logToOutput('Cannot save chunk: failed to generate file path', 'error')
-		}
-		return null
-	}
-
-	const chunk: RecordingChunk = {
-		version: '2.0',
-		sessionId: recording.sessionId,
-		startTime: recording.startDateTime.getTime(),
-		chunkIndex,
-		events: recording.events,
-	}
-
-	const jsonContent = JSON.stringify(chunk)
-	const chunkFileName = `${baseFilePath}_chunk_${String(chunkIndex).padStart(3, '0')}.json.gz`
-	const filePath = path.join(exportPath, chunkFileName)
-
-	try {
-		const directory = path.dirname(filePath)
-		if (!fs.existsSync(directory)) {
-			fs.mkdirSync(directory, { recursive: true })
-		}
-
-		const compressed = await gzipAsync(jsonContent, { level: 6 })
-		await fs.promises.writeFile(filePath, compressed)
-
-		if (log) {
-			logToOutput(`Chunk ${chunkIndex} saved to ${filePath} (${recording.events.length} events)`, 'info')
-		}
-
-		// Clear events and increment chunk counter after successful save
-		recording.events = []
-		chunkIndex++
-
-		// Refresh the recordFiles view
-		vscode.commands.executeCommand('crowd-code.refreshRecordFiles')
-
-		return filePath
-	} catch (err) {
-		logToOutput(`Failed to save chunk: ${err}`, 'error')
-		return null
-	}
-}
-
-/**
- * Upload a compressed file (chunk or snapshot part) using S3 presigned URLs.
+ * Upload a file using S3 presigned URLs.
  * Two-step process: 1) Request presigned URL from Lambda, 2) Upload directly to S3
  */
 async function uploadGzipFile(filePath: string, relativePath: string): Promise<void> {
@@ -870,22 +890,6 @@ async function uploadGzipFile(filePath: string, relativePath: string): Promise<v
 		}
 	}
 }
-
-/**
- * Save current events as a chunk and immediately upload it.
- * This is the main entry point for periodic saves.
- */
-async function saveAndUploadChunk(log = true): Promise<void> {
-	const chunkFilePath = await saveChunk(log)
-	if (chunkFilePath) {
-		const exportPath = getExportPath()
-		if (exportPath) {
-			const relativePath = path.relative(exportPath, chunkFilePath)
-			await uploadGzipFile(chunkFilePath, relativePath)
-		}
-	}
-}
-
 
 export function updateStatusBarItem(): void {
     if (recording.isRecording) {
