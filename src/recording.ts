@@ -815,7 +815,8 @@ async function saveChunk(log = true): Promise<string | null> {
 }
 
 /**
- * Upload a compressed file (chunk or snapshot part) to the API gateway.
+ * Upload a compressed file (chunk or snapshot part) using S3 presigned URLs.
+ * Two-step process: 1) Request presigned URL from Lambda, 2) Upload directly to S3
  */
 async function uploadGzipFile(filePath: string, relativePath: string): Promise<void> {
 	if (!hasConsent()) {return}
@@ -829,18 +830,41 @@ async function uploadGzipFile(filePath: string, relativePath: string): Promise<v
 		const extensionVersion = extContext.extension.packageJSON.version as string
 		const userId = extContext.globalState.get<string>('userId')
 
-		await axios.post(CROWD_CODE_API_GATEWAY_URL, compressedData, {
+		const response = await axios.post(CROWD_CODE_API_GATEWAY_URL, {
+			fileName: relativePath,
+			version: extensionVersion,
+			userId: userId ?? '',
+		}, {
+			headers: {
+				'Content-Type': 'application/json',
+			},
+			timeout: 10000,
+		})
+
+		const { uploadUrl } = response.data
+		if (!uploadUrl || typeof uploadUrl !== 'string') {
+			throw new Error('Invalid presigned URL received from server')
+		}
+
+		await axios.put(uploadUrl, compressedData, {
 			headers: {
 				'Content-Type': 'application/gzip',
-				'X-File-Name': relativePath,
-				'X-Version': extensionVersion,
-				'X-User-Id': userId ?? '',
 			},
+			timeout: 60000,
+			maxBodyLength: Infinity,
+			maxContentLength: Infinity,
 		})
+
 		logToOutput(`Successfully uploaded: ${relativePath}`, 'info')
 	} catch (error: unknown) {
 		if (axios.isAxiosError(error)) {
-			logToOutput(`Error uploading ${relativePath}: ${error.message}`, 'error')
+			if (error.response) {
+				logToOutput(`Error uploading ${relativePath}: ${error.response.status} - ${error.response.data}`, 'error')
+			} else if (error.request) {
+				logToOutput(`Error uploading ${relativePath}: No response received`, 'error')
+			} else {
+				logToOutput(`Error uploading ${relativePath}: ${error.message}`, 'error')
+			}
 		} else {
 			logToOutput(`Error uploading ${relativePath}: ${error}`, 'error')
 		}
