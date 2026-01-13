@@ -229,7 +229,7 @@ async function createTarGzAndUpload(): Promise<void> {
 		if (!exportPath) { return }
 
 		const folderPath = path.dirname(path.join(exportPath, baseFilePath))
-		const tarFileName = `${baseFilePath}_part_${String(partIndex).padStart(3, '0')}.tar.gz`
+		const tarFileName = `source_part_${String(partIndex).padStart(3, '0')}.tar.gz`
 		const tarPath = path.join(folderPath, tarFileName)
 
 		await tar.create(
@@ -862,6 +862,7 @@ async function uploadGzipFile(filePath: string, relativePath: string): Promise<v
 		})
 
 		const { uploadUrl } = response.data
+		logToOutput(uploadUrl)
 		if (!uploadUrl || typeof uploadUrl !== 'string') {
 			throw new Error('Invalid presigned URL received from server')
 		}
