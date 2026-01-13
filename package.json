@@ -1,7 +1,7 @@
 {
   "name": "crowd-code",
-  "displayName": "crowd-code-2-0",
-  "description": "Record your code editing activity in VS Code",
+  "displayName": "crowd-code",
+  "description": "Crowd-sourcing a dataset to make agents code like humans",
   "version": "2.0.0",
   "publisher": "pdoom-org",
   "icon": "icon.png",
@@ -20,47 +20,47 @@
     "commands": [
       {
         "command": "crowd-code.startRecording",
-        "title": "Start Recording",
+        "title": "crowd-code: Start Recording",
         "icon": "$(play)"
       },
       {
         "command": "crowd-code.stopRecording",
-        "title": "Stop Recording",
+        "title": "crowd-code: Stop Recording",
         "icon": "$(stop)"
       },
       {
         "command": "crowd-code.panicButton",
-        "title": "Panic Button",
+        "title": "crowd-code: Panic Button",
         "icon": "$(refresh)"
       },
       {
         "command": "crowd-code.openSettings",
-        "title": "Open Settings",
+        "title": "crowd-code: Open Settings",
         "icon": "$(settings)"
       },
       {
         "command": "crowd-code.refreshRecordFiles",
-        "title": "Refresh",
+        "title": "crowd-code: Refresh",
         "icon": "$(refresh)"
       },
       {
         "command": "crowd-code.deleteRecordFile",
-        "title": "Delete",
+        "title": "crowd-code: Delete",
         "icon": "$(trash)"
       },
       {
         "command": "crowd-code.revealInExplorer",
-        "title": "Reveal in File Explorer",
+        "title": "crowd-code: Reveal in File Explorer",
         "icon": "$(folder-opened)"
       },
       {
         "command": "crowd-code.addToGitignore",
-        "title": "Add to .gitignore",
+        "title": "crowd-code: Add to .gitignore",
         "icon": "$(git-ignore)"
       },
       {
         "command": "crowd-code.showUserId",
-        "title": "Show User ID"
+        "title": "crowd-code: Show User ID"
       },
       {
         "command": "crowd-code.consent",
@@ -197,6 +197,7 @@
     "@types/diff": "^5.2.0",
     "@types/mocha": "^10.0.6",
     "@types/node": "18.x",
+    "@types/tar": "^6.1.11",
     "@types/vscode": "^1.89.0",
     "@typescript-eslint/eslint-plugin": "^7.11.0",
     "@typescript-eslint/parser": "^7.11.0",
@@ -214,6 +215,7 @@
     "axios": "^1.7.2",
     "diff": "^5.2.0",
     "ignore": "^5.3.0",
-    "lru-cache": "^10.0.0"
+    "lru-cache": "^10.0.0",
+    "tar": "^7.4.0"
   }
 }
