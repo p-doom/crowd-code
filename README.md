@@ -65,7 +65,7 @@ Your trust means a lot to us, and we will take great care in anonymizing the dat
 
 ## 📄 Output
 
-The recorded changes are saved in a JSON file at the configured export path (default: `${TMPDIR}/crowd-code/`), providing a detailed and accessible log of your coding session.
+The recorded changes are saved in a JSON file at the configured export path (default: `${TMPDIR}/`), providing a detailed and accessible log of your coding session.
 
 ## ▶️ Play it back!
 
@@ -78,7 +78,7 @@ Playback is a feature by the upstream repository. We have not tested playback us
 
 - `crowdCode.export.exportPath`: Set the export path. Use `${workspaceFolder}` to export to the workspace folder. In case the path does not exist in the workspace, it will be created.
 
-  Default: `$TMPDIR/crowd-code/`
+  Default: `$TMPDIR/`
 
 - `crowdCode.export.createPathOutsideWorkspace`: Create the export path outside the workspace if it doesn't exist
 
