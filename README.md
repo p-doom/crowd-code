@@ -10,7 +10,7 @@
   <a href="https://www.pdoom.org/"><img alt="Homepage"
     src="https://img.shields.io/badge/Homepage-p%28doom%29-white?logo=home&logoColor=black"/></a>
   <a href="https://huggingface.co/p-doom"><img alt="Hugging Face"
-    src="https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-p%28doom%29-ffc107?color=ffc107&logoColor=white"/></a>
+    src="https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-p--doom-ffc107?color=ffc107&logoColor=white"/></a>
   <br>
   <a href="https://discord.gg/G4JNuPX2VR"><img alt="Discord"
     src="https://img.shields.io/badge/Discord-p%28doom%29-7289da?logo=discord&logoColor=white&color=7289da"/></a>
