@@ -5,19 +5,32 @@ All notable changes to the "crowd-code" extension will be documented in this fil
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
-## [Unreleased]
+## 2.0.0
 
 ### Added
 
+- **State-based observations**: Capture editor and terminal viewports as observations, matching human-visible state at 10 Hz temporal granularity
+- **First-class actor differentiation**: Explicitly distinguish between user actions, agent edits (Cursor, Copilot, etc.), and external changes (git, CLI tools)
+- **Workspace-wide change capture**: Monitor and record all filesystem changes across the VS Code workspace, not just the active editor
+- **Direct CLI agent capture**: Record terminal output from CLI agents like Claude Code and Codex, including prompts and responses
+- **User edit correlation**: Buffer user edits and correlate them with filesystem changes on save, with proper attribution to user vs agent
+- **Workspace snapshots**: Capture compressed snapshots of the workspace immediately before each agent edit for replay and context reconstruction
+- **Compressed output format**: Output JSONs and workspace snapshots are compressed into a single `.tar.gz` before upload
+- **Decoupled capture format**: Raw capture format is a sequence of timestamped actions and observations, enabling flexible post-processing for different training formats
+
 ### Changed
 
-### Deprecated
-
-### Removed
+- **Architecture redesign**: Moved from purely event-based recordings to a hybrid model combining state-based observations and event-based actions
+- **Temporal granularity**: Viewport sampling at 10 Hz to capture interactive CLI tools (vim, less, etc.) in real-time
+- **Data format**: Action-observation rollouts directly analogous to video-based imitation learning, but purely text-based
 
 ### Fixed
 
-### Security
+- **Agent edit capture**: Agent edits that bypass VS Code APIs (like Cursor's direct filesystem writes) are now properly captured
+- **Agent edit attribution**: Agent edits are now correctly labeled and captured workspace-wide, not just in the active file
+- **Git operation handling**: `git stash`, `git pull`, and `git checkout` operations no longer corrupt the file cache
+- **External filesystem changes**: All external filesystem changes are now properly recorded, preventing silent dataset corruption
+- **File cache synchronization**: Implicit file state now stays in sync with actual filesystem state
 
 ## 1.1.3
 
