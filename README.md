@@ -19,8 +19,8 @@
   <a href="https://twitter.com/prob_doom"><img alt="Twitter Follow"
     src="https://img.shields.io/badge/Twitter-prob__doom-white?logo=x&logoColor=white"/></a>
   <br>
-  <a href="LICENSE" style="margin: 2px;">
-    <img alt="License" src="https://img.shields.io/badge/License-Apache 2.0-f5de53?&color=f5de53" style="display: inline-block; vertical-align: middle;"/>
+  <a href="LICENSE.md" style="margin: 2px;">
+    <img alt="License" src="https://img.shields.io/badge/License-MIT-f5de53?&color=f5de53" style="display: inline-block; vertical-align: middle;"/>
   </a>
   <br>
 </div>
