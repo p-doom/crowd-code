@@ -238,19 +238,26 @@ async function createTarGzAndUpload(): Promise<void> {
 		)
 
 		const relativePath = path.relative(exportPath, tarPath)
-		await uploadGzipFile(tarPath, relativePath)
+		const uploadSucceeded = await uploadGzipFile(tarPath, relativePath)
 
-		for (const chunkPath of chunkFilesToDelete) {
-			await fs.promises.unlink(chunkPath)
+		if (uploadSucceeded) {
+			for (const chunkPath of chunkFilesToDelete) {
+				await fs.promises.unlink(chunkPath)
+			}
+			for (const snapshotPath of snapshotFilesToDelete) {
+				await fs.promises.unlink(snapshotPath)
+			}
+			await fs.promises.unlink(tarPath)
+
+			logToOutput(`Uploaded part ${partIndex} (${filesToTar.length} files)`, 'info')
+
+			partIndex++
+		} else {
+			// Upload failed, delete the tar
+			// (it will be recreated on next upload attempt with more data)
+			await fs.promises.unlink(tarPath)
+			logToOutput(`Upload failed for part ${partIndex}, keeping local files for retry`, 'info')
 		}
-		for (const snapshotPath of snapshotFilesToDelete) {
-			await fs.promises.unlink(snapshotPath)
-		}
-		await fs.promises.unlink(tarPath)
-
-		logToOutput(`Uploaded part ${partIndex} (${filesToTar.length} files)`, 'info')
-
-		partIndex++
 
 	} finally {
 		uploadInProgress = false
@@ -837,11 +844,16 @@ export async function stopRecording(force = false): Promise<void> {
 /**
  * Upload a file using S3 presigned URLs.
  * Two-step process: 1) Request presigned URL from Lambda, 2) Upload directly to S3
+ * Returns true if upload succeeded, false otherwise
  */
-async function uploadGzipFile(filePath: string, relativePath: string): Promise<void> {
-	if (!hasConsent()) {return}
+async function uploadGzipFile(filePath: string, relativePath: string): Promise<boolean> {
+	if (!hasConsent()) {
+		logToOutput('Skipping upload: no consent', 'info')
+		return false
+	}
 	if (typeof CROWD_CODE_API_GATEWAY_URL !== 'string' || !CROWD_CODE_API_GATEWAY_URL.trim()) {
-		return
+		logToOutput('Skipping upload: API URL not configured', 'info')
+		return false
 	}
 
 	try {
@@ -877,6 +889,7 @@ async function uploadGzipFile(filePath: string, relativePath: string): Promise<v
 		})
 
 		logToOutput(`Successfully uploaded: ${relativePath}`, 'info')
+		return true
 	} catch (error: unknown) {
 		if (axios.isAxiosError(error)) {
 			if (error.response) {
@@ -889,6 +902,7 @@ async function uploadGzipFile(filePath: string, relativePath: string): Promise<v
 		} else {
 			logToOutput(`Error uploading ${relativePath}: ${error}`, 'error')
 		}
+		return false
 	}
 }
 
