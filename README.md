@@ -72,9 +72,9 @@ The original crowd-code was not designed for the agent-heavy software engineerin
 crowd-code 2.0 moves beyond purely event-based recordings towards capturing **states** (observations) and **events** (actions), with states designed to be as close to human observations as possible.
 
 **First-class actor differentiation.** We now capture edits workspace-wide and differentiate between:
-- **User actions/edits** — keystrokes, navigation, commands
-- **Agent edits** — changes made by Cursor, Copilot, or other IDE agents
-- **External changes** — git operations, CLI tools, filesystem watchers
+- **User actions/edits**: keystrokes, navigation, commands
+- **Agent edits**: changes made by Cursor, Copilot, or other IDE agents
+- **External changes**: git operations, CLI tools, filesystem watchers
 
 **Direct CLI agent capture.** We directly capture CLI agents like Claude Code and Codex. Their terminal output (including prompts and responses) is recorded as part of the terminal viewport stream.
 
