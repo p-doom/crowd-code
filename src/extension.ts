@@ -24,7 +24,7 @@ import {
 import { initializeGitProvider, cleanupGitProvider } from './gitProvider'
 import * as fs from 'node:fs'
 import * as path from 'node:path'
-import { showConsentChangeDialog, ensureConsent } from './consent'
+import { showConsentDialog, ensureConsent, syncConsentSetting } from './consent'
 
 export let statusBarItem: vscode.StatusBarItem
 export let extContext: vscode.ExtensionContext
@@ -166,7 +166,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
 	context.subscriptions.push(
 		vscode.commands.registerCommand(commands.openSettings, () => {
-			vscode.commands.executeCommand('workbench.action.openSettings', '@ext:pdoom-org.crowd-code')
+			vscode.commands.executeCommand('workbench.action.openSettings', '@ext:p-doom.crowd-code')
 		})
 	)
 
@@ -179,7 +179,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 	// Register consent management command
 	context.subscriptions.push(
 		vscode.commands.registerCommand('crowd-code.consent', async () => {
-			await showConsentChangeDialog()
+			await showConsentDialog()
 		})
 	)
 
@@ -193,6 +193,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 	statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 9000)
 	updateStatusBarItem()
 	context.subscriptions.push(statusBarItem)
+
+	syncConsentSetting()
 
 	// Ensure consent is obtained when the extension is first activated
 	await ensureConsent()

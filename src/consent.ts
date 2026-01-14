@@ -16,6 +16,9 @@ export function getConsentStatus(): ConsentStatus {
  */
 export function setConsentStatus(status: ConsentStatus): void {
     extContext.globalState.update(CONSENT_KEY, status)
+	void vscode.workspace
+		.getConfiguration('crowdCode')
+		.update('consentStatus', status, vscode.ConfigurationTarget.Global)
 }
 
 /**
@@ -29,35 +32,33 @@ export function hasConsent(): boolean {
  * Shows the consent dialog to the user
  */
 export async function showConsentDialog(): Promise<boolean> {
-    const consentItem: vscode.MessageItem = { title: 'Consent to data collection' }
-    const declineItem: vscode.MessageItem = { title: 'Decline data collection', isCloseAffordance: true }
-    const learnMoreItem: vscode.MessageItem = { title: 'Learn more about data collection' }
+	const consentItem: vscode.MessageItem = { title: 'Consent to data collection' }
+	const declineItem: vscode.MessageItem = { title: 'Decline data collection' }
 
-    const result = await vscode.window.showInformationMessage(
-        'crowd-code collects anonymized usage data for research purposes. Your personal information is not collected, and the data is thoroughly anonymized before being shared with researchers. Do you consent to data collection?',
-        { modal: true },
-        consentItem,
-        declineItem,
-        learnMoreItem
-    )
+	for (;;) {
+		const result = await vscode.window.showInformationMessage(
+			'Please choose whether crowd-code may upload anonymized usage data.',
+			{
+				modal: true,
+				detail:
+					'We ask for your consent upon installation. You can revoke participation at any time; after that, recorded data stays solely on your device. If you close this dialog without deciding, uploads stay off until you choose.\n\n' +
+					'Your trust matters. We anonymize the dataset before sharing it with the research community and strive for full transparency. Suggestions to improve the crowd-sourcing setup are welcome.',
+			},
+			consentItem,
+			declineItem,
+		)
 
-    if (result === consentItem) {
-        setConsentStatus('accepted')
-        vscode.window.showInformationMessage('Thank you for your contribution! Data collection is now enabled. You can change this setting at any time.')
-        return true
-    } else if (result === declineItem) {
-        setConsentStatus('declined')
-        return false
-    } else if (result === learnMoreItem) {
-        // Open privacy policy or documentation
-        vscode.env.openExternal(vscode.Uri.parse('https://github.com/p-doom/crowd-code#privacy'))
-        // Show the dialog again after opening the link
-        return showConsentDialog()
-    }
-
-    // User dismissed the dialog
-    setConsentStatus('declined')
-    return false
+		if (result === consentItem) {
+			setConsentStatus('accepted')
+			vscode.window.showInformationMessage('Thank you for your contribution! Data collection is now enabled. You can change this setting at any time.')
+			return true
+		}
+		if (result === declineItem) {
+			setConsentStatus('declined')
+			return false
+		}
+		// Require an explicit choice when the modal is dismissed.
+	}
 }
 
 /**
@@ -122,3 +123,10 @@ export function getConsentStatusMessage(): string {
             return 'Data collection pending'
     }
 } 
+
+export function syncConsentSetting(): void {
+	const status = getConsentStatus()
+	void vscode.workspace
+		.getConfiguration('crowdCode')
+		.update('consentStatus', status, vscode.ConfigurationTarget.Global)
+}

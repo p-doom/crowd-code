@@ -171,6 +171,17 @@
           "default": true,
           "description": "Whether to show the timer in the status bar when recording.",
           "order": 5
+        },
+        "crowdCode.consentStatus": {
+          "type": "string",
+          "enum": [
+            "pending",
+            "accepted",
+            "declined"
+          ],
+          "default": "pending",
+          "markdownDescription": "Mirror of the data collection consent status managed by the consent dialog.",
+          "order": 6
         }
       }
     }

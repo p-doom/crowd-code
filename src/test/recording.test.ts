@@ -13,7 +13,7 @@ import { statusBarItem } from '../extension'
 const waitMs = (ms = 500) => new Promise(resolve => setTimeout(resolve, ms))
 
 suite('Recording Tests', () => {
-	const publisher = 'pdoom-org'
+	const publisher = 'p-doom'
 	const extensionName = 'crowd-code'
 
 	let workspaceFolder: string
