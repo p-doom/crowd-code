@@ -1,125 +1,142 @@
-# ⚫ crowd-code
+<!-- markdownlint-disable first-line-h1 -->
+<!-- markdownlint-disable html -->
+<!-- markdownlint-disable no-duplicate-header -->
 
-To install the extension, simply follow the instructions at https://github.com/p-doom/crowd-code/releases.
+<div align="center">
+  <img src="https://github.com/p-doom/crowd-code/blob/main/img/pdoom-logo.png?raw=true" width="60%" alt="p(doom)" />
+</div>
+<hr>
+<div align="center" style="line-height: 1;">
+  <a href="https://www.pdoom.org/"><img alt="Homepage"
+    src="https://img.shields.io/badge/Homepage-p%28doom%29-white?logo=home&logoColor=black"/></a>
+  <a href="https://huggingface.co/p-doom"><img alt="Hugging Face"
+    src="https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-p--doom-ffc107?color=ffc107&logoColor=white"/></a>
+  <br>
+  <a href="https://discord.gg/G4JNuPX2VR"><img alt="Discord"
+    src="https://img.shields.io/badge/Discord-p%28doom%29-7289da?logo=discord&logoColor=white&color=7289da"/></a>
+  <a href="https://github.com/p-doom"><img alt="GitHub"
+    src="https://img.shields.io/badge/GitHub-p--doom-24292e?logo=github&logoColor=white"/></a>
+  <a href="https://twitter.com/prob_doom"><img alt="Twitter Follow"
+    src="https://img.shields.io/badge/Twitter-prob__doom-white?logo=x&logoColor=white"/></a>
+  <br>
+  <a href="LICENSE" style="margin: 2px;">
+    <img alt="License" src="https://img.shields.io/badge/License-Apache 2.0-f5de53?&color=f5de53" style="display: inline-block; vertical-align: middle;"/>
+  </a>
+  <br>
+</div>
 
-This extension provides functionality to record IDE actions. Currently supported actions include text insertions, deletions, undo, redo, cursor movement (including VIM motions), file switches, git branch checkouts, terminal invocation and terminal command execution (both input and output). The changes are recorded and stored in JSON files. If you consent to participate in crowd-sourcing VS code actions, the JSON files are uploaded to an S3 bucket. We anonymize and clean the crowd-sourced dataset and periodically share it with the community. If you do not consent, no data will leave your machine, and the JSON files will solely be stored locally.
+# `crowd-code`: Crowd-Sourcing Months-Long Software Engineering Trajectories
 
-All uncaptured data is lost data. We want to crowd-source a dense dataset of IDE actions to eventually finetune models on. This would (to the best of our knowledge) constitute the first crowd-sourced dataset of dense IDE actions.
+We introduce crowd-code 2.0, a complete redesign of crowd-code: a VS Code / Cursor extension for crowd-sourcing software engineering traces as action–observation rollouts. Install once, and forget about it.
 
-We thank Mattia Consiglio for his awesome work on the upstream repository, which made our lives infinitely easier.
+> **_NOTE_**: This repository contains code for crowd-code 2.0. \
+You can find the legacy codebase at https://github.com/p-doom/crowd-code-legacy
 
-## 📚 Table of Contents
+## Motivation
 
-- [⚫ crowd-code](#-crowd-code)
-  - [📚 Table of Contents](#-table-of-contents)
-  - [📖 Usage](#-usage)
-  - [🔒 Privacy](#-privacy)
-  - [📄 Output](#-output)
-  - [▶️ Play it back!](#️-play-it-back)
-  - [🔧 Extension Settings](#-extension-settings)
-  - [⚙️ Requirements](#️-requirements)
-  - [🐛 Known Issues](#-known-issues)
-  - [🤝 Contributing](#-contributing)
-  - [💸 Support me](#-support-me)
-  - [📝 Release Notes](#-release-notes)
+Models can win IMO gold medals yet struggle at tasks that would provide obvious economic value. This is not a capability problem, it is a data problem. Models do what they are trained to do.
 
-## 📖 Usage
+Millions of people work every day. If we can record them and train on dense, long-horizon trajectories of the human workforce, we can unlock the next set of model capabilities (expanded task horizons, exploration, continual learning) through prolonged behaviour cloning. Humans do not write code by executing a fixed plan. They explore, revise, undo, test, change direction, and learn. We need data on the process of software engineering, not just the final code.
 
-![crowd-code Extension](https://raw.githubusercontent.com/mattia-consiglio/vs-code-recorder/main/img/preview.gif)
+Architectural bottlenecks (state that grows with sequence length, long-horizon credit assignment) matter, but current frontier AI research is still in a regime that is severely data-bottlenecked.
 
-As soon as the extension activates, recording commences automatically. Recording automatically stops upon IDE closure.
-Additionally, you can control the recording in three ways:
+## A Simplified Setting for Behaviour Cloning from Screencasts
 
-1. Using the status bar (on the right): Click on "Start recording" to begin and "Stop recording" to end.
-2. Using the VS Code Recorder sidebar: Click on the extension icon in the activity bar to open the sidebar, where you can:
-   - Start/Stop the recording
-   - View the recording timer
-   - See the current file being recorded
-   - Manage your recorded files
-   - Add the export path to .gitignore
-   - Enable/disable participation in crowd-sourcing the dataset
-3. Using the panic button: Click on "Panic button" to remove the last few actions from the captured dataset. This is useful to immediately remove sensitive data from the dataset.
+Behaviour cloning from unlabeled videos means attaining policies given observation streams without action labels or rewards. [AGI-CAST](https://pdoom.org/agi_cast.html) captures raw screen recordings of AGI research, but training on videos is compute-expensive, and large-scale, open datasets of workforce screencasts beyond AGI-CAST that are suitable for training are non-existent.
 
-The extension will automatically record changes in your text editor. When you stop the recording, it will finalize the data and save it to a JSON file.
+**crowd-code 2.0 is a simplified setting to study behaviour cloning from screencasts**, where:
 
-You can customize the recording experience with these features:
+- **observations** correspond to what a human could see (editor and terminal viewports),
+- **actions** correspond to edits, cursor movement, navigation, terminal interaction
 
-- Set custom names for recording folders
-- Automatically add the export path to .gitignore
+The result is a sequence of action–observation rollouts, directly analogous to video-based imitation learning, but purely text-based. We subsample continuously changing viewports (scrolling, streaming terminal output) at 10 Hz matching the temporal granularity of video. This means we capture the state of interactive CLI tools like Claude Code, Codex CLI, `vim` and `less` in real-time.
 
-You can also use the command palette to access the extension's features.
-Available commands:
+## Why crowd-code 2.0?
 
-- `crowd-code.startRecording`: Start the recording
-- `crowd-code.stopRecording`: Stop the recording
-- `crowd-code.panicButton`: Remove the last few actions from the dataset
-- `crowd-code.openSettings`: Open the extension settings
-- `crowd-code.consent`: Manage data collection consent
+**crowd-code 1.0 recorded events. crowd-code 2.0 combines state-based observations and event-based actions.**
 
-## 🔒 Privacy
+The original crowd-code was not designed for the agent-heavy software engineering workflows that are now standard, and its data capturing logic is not reminiscent of the setting of behaviour cloning from videos. 
 
-We ask for your consent in participating in crowd-sourcing upon installation of the extension. You can always revoke your participation, after which your recorded data will solely be stored on your device.
+### Problems with crowd-code 1.0
 
-Your trust means a lot to us, and we will take great care in anonymizing the dataset before sharing it to the research community. At the same time, we strive for ultimate transparency. If you have suggestions on how we can improve our crowd-sourcing setting, we are more than happy to hear your feedback.
+| Issue | Consequence |
+|-------|-------------|
+| **Agent edits bypassed VS Code APIs** | Cursor's agent writes directly to the filesystem, not through VS Code's edit API. These edits were never captured and corrupted the file cache. |
+| **Agent edits were only partially recorded** | When captured at all, agent edits were only recorded inside the active file and were not labeled as agent-generated. |
+| **`git stash` / `git pull` corrupted the cache** | External filesystem changes were not recorded, causing the implicit file state to go out of sync, silently corrupting the dataset. |
+| **`git checkout` required manual handling** | We explicitly handled checkouts via a full cache reset: a workaround, but not a solution. |
+| **No workspace-wide visibility** | Changes outside the active editor were invisible to the recording. |
 
+### What crowd-code 2.0 changes
 
-## 📄 Output
+crowd-code 2.0 moves beyond purely event-based recordings towards capturing **states** (observations) and **events** (actions), with states designed to be as close to human observations as possible.
 
-The recorded changes are saved in a JSON file at the configured export path (default: `${TMPDIR}/`), providing a detailed and accessible log of your coding session.
+**First-class actor differentiation.** We now capture edits workspace-wide and differentiate between:
+- **User actions/edits**: keystrokes, navigation, commands
+- **Agent edits**: changes made by Cursor, Copilot, or other IDE agents
+- **External changes**: git operations, CLI tools, filesystem watchers
 
-## ▶️ Play it back!
+**Direct CLI agent capture.** We directly capture CLI agents like Claude Code and Codex. Their terminal output (including prompts and responses) is recorded as part of the terminal viewport stream.
 
-Playback is a feature by the upstream repository. We have not tested playback using our modified repository (e.g. cursor movement and terminal capture are not implemented upstream; chances are high that playback simply breaks using recordings captured by crowd-code). If you want to try this nonetheless:
+**User edit correlation.** Attributing user edits to filesystem changes is non-trivial. Our solution: buffer user edits, correlate them with filesystem changes on save, and attribute uncorrelated changes to agents. We tested our implementation for edge-cases: if a save is triggered by an agent edit while user changes are pending, the agent edit is still correctly attributed.
 
-- The output files can be played back in the [VS Code Recorder Player web app](https://github.com/mattia-consiglio/vs-code-recorder-player).
-- 🚧 React component available soon...
+## Workspace Snapshots
 
-## 🔧 Extension Settings
+To reconstruct what context an agent had access to when making an edit, we capture a **compressed snapshot of the workspace immediately before each agent edit**.
 
-- `crowdCode.export.exportPath`: Set the export path. Use `${workspaceFolder}` to export to the workspace folder. In case the path does not exist in the workspace, it will be created.
+This has an additional benefit: we can **replay the rollout with a different model** for on-policy data generation.
 
-  Default: `$TMPDIR/`
+Output JSONs and workspace snapshots are compressed into a single `.tar.gz` before upload.
 
-- `crowdCode.export.createPathOutsideWorkspace`: Create the export path outside the workspace if it doesn't exist
+## From Capture to Training
 
-  Default: `true`
+crowd-code 2.0 **decouples the capture format from the training format**. The raw capture format is a sequence of timestamped actions and observations. Post-processing can transform this into:
 
-- `crowdCode.export.addToGitignore`: Add the export path to .gitignore when creating the folder
+- **Goal-conditioned trajectories** for behaviour cloning
+- **Prompt/agent-response pairs** for constructing rewards from implicit human feedback
+- **Teacher-forced next-action prediction sequences** for tab completion (without invalidation of the KV cache)
 
-  Default: `false`
+### Constructing synthetic rewards from implicit user feedback
 
-- `crowdCode.recording.askFolderName`: Ask for a custom folder name before starting a recording
+Because agent edits are now explicit, we can **post-hoc reconstruct the prompt that led to each edit** using LLMs. For CLI agents like Claude Code, we often have direct access to the prompt via the terminal recording. Even when we don't, reconstruction is feasible from context.
 
-  Default: `false`
+From there, we can construct synthetic reward signals from implicit user feedback: training models on what humans accept, reject, and revise. With crowd-code 2.0, we hope to also enable the community to work on **methods and algorithms for product-feedback loops**.
 
-- `crowdCode.appearance.minimalMode`: Enable or disable the minimal mode
+### Replay and visualization
 
-  Default: `false`
+The [crowd-pilot-serializer](https://github.com/p-doom/crowd-pilot-serializer) includes a replayer for visualizing recordings.
 
-- `crowdCode.appearance.showTimer`: Enable or disable the display time
+<!-- TODO: Add GIF of replayer showing cursor movement, file switches, edits, CLI agent use & agent edits -->
 
-  Default: `true`
+## Limitations
 
-## ⚙️ Requirements
+**Capture-time attribution:**
+- User actions that span beyond the current viewport (rename, search-and-replace) are partially misattributed as agent actions. *Easily fixable during post-processing.*
+- Agent actions inside the viewport are partially misattributed as user actions. *Easily fixable during post-processing.*
+- File creations/deletions cannot be attributed to user/agent at capture time. *Usually obvious during post-processing.*
 
-This extension requires Visual Studio Code, or any other editor that supports the VS Code API (like Cursor, VSCodium, Windsurf, etc.), to run. No additional dependencies are needed.
+**Undo/redo:**
+- VS Code-native undo/redo is captured with full semantics.
+- Undo via VIM extension is captured as a regular edit (no undo metadata).
 
-## 🐛 Known Issues
+**Memory:**
+- We maintain an in-memory cache of the entire workspace (required to compute agent diffs and reconstruct rollouts). This is the minimal necessary state.
 
-There are currently no known issues with this extension.
+**Terminal:**
+- We cannot capture terminal scrolling actions, only viewport state.
 
-## 🤝 Contributing
+## Looking Forward
 
-If you'd like to contribute to this extension, please feel free to fork the repository and submit a pull request.
+We believe that many capabilities are yet to be unlocked in current-generation architectures by behaviour-cloning them: Expanding the task horizon of models, working on single problems for hours and days at a time, imitating human exploration priors, learning on-the-go, knowing where to look (how to search by efficiently jumping around repositories, how to recall information out-of-working-memory; what we call **attention in environment-space**). Architectural bottlenecks only become imminent by constructing potential paths towards AGI. Architecture research prerequisites first exhausting the data regime.
 
-## 💸 Support the upstream author
+Our long-term goal is not merely to train on crowd-code data.
 
-If you like this extension, please consider [supporting the author of the upstream repository](https://www.paypal.com/donate/?hosted_button_id=D5EUDQ5VEJCSL)!
+We want to use it:
+- **to train inverse dynamics models**, inferring actions from unlabeled observation sequences,
+- **as a testbed for behaviour-cloning from videos** to gather insights transferable to the setting of AGI-CAST and beyond,
+- **to bootstrap agents** that can [acquire the data they need when they encounter unfamiliar regimes](https://pdoom.org/thesis.html).
 
-## 📝 Release Notes
+AGI will require systems that can expand their training distribution by knowing where to look.
+We believe software engineering is one of the best environments to study these problems.
 
-See [CHANGELOG.md](CHANGELOG.md)
-
----
-
-**😊 Enjoy!**
+**We are greater than the sum of ours parts. <u>Together</u>.**
