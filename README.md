@@ -139,4 +139,4 @@ We want to use it:
 AGI will require systems that can expand their training distribution by knowing where to look.
 We believe software engineering is one of the best environments to study these problems.
 
-**We are greater than the sum of ours parts. <u>Together</u>.**
+**We are greater than the sum of our parts. <u>Together</u>.**
