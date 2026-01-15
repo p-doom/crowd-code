@@ -2,7 +2,7 @@
   "name": "crowd-code",
   "displayName": "crowd-code",
   "description": "Crowd-sourcing a dataset to make agents code like humans",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "publisher": "p-doom",
   "icon": "icon.png",
   "engines": {
