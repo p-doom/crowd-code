@@ -2,6 +2,13 @@
 <!-- markdownlint-disable html -->
 <!-- markdownlint-disable no-duplicate-header -->
 
+> **Install crowd-code 2.0** to help crowd-source the next-generation coding dataset.
+>
+> [![Install in Cursor](https://img.shields.io/badge/Install%20in%20Cursor-111111?style=for-the-badge&logo=cursor&logoColor=white)](cursor:extension/p-doom.crowd-code)
+> [![Install in VS Code](https://img.shields.io/badge/Install%20in%20VS%20Code-007acc?style=for-the-badge&logo=visualstudiocode&logoColor=white)](vscode:extension/p-doom.crowd-code)
+> [![Install in Antigravity](https://img.shields.io/badge/Install%20in%20Antigravity-0f172a?style=for-the-badge&logo=vercel&logoColor=white)](antigravity:extension/p-doom.crowd-code)
+<br>
+<hr>
 <div align="center">
   <img src="https://github.com/p-doom/crowd-code/blob/main/img/pdoom-logo.png?raw=true" width="60%" alt="p(doom)" />
 </div>
@@ -9,6 +16,10 @@
 <div align="center" style="line-height: 1;">
   <a href="https://www.pdoom.org/"><img alt="Homepage"
     src="https://img.shields.io/badge/Homepage-p%28doom%29-white?logo=home&logoColor=black"/></a>
+  <a href="https://marketplace.visualstudio.com/items?itemName=p-doom.crowd-code"><img alt="VS Code Marketplace"
+    src="https://img.shields.io/badge/VS%20Code%20Marketplace-View-2c2c2c?logo=visualstudiocode&logoColor=white"/></a>
+  <a href="https://open-vsx.org/extension/p-doom/crowd-code"><img alt="Open VSX Marketplace"
+    src="https://img.shields.io/badge/Open%20VSX%20Marketplace-View-262626?logo=eclipseide&logoColor=white"/></a>
   <a href="https://huggingface.co/p-doom"><img alt="Hugging Face"
     src="https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-p--doom-ffc107?color=ffc107&logoColor=white"/></a>
   <br>
